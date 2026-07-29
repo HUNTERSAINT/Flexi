@@ -6,7 +6,12 @@ const FROM = process.env.EMAIL_FROM ?? "Flexi Route <support@flexirouteglobal.co
 const REPLY_TO = process.env.EMAIL_REPLY_TO ?? FROM;
 const APP_URL = process.env.APP_URL ?? "https://flexirouteglobal.com";
 
-async function send(to: string, subject: string, html: string, text: string): Promise<void> {
+export interface EmailResult {
+  ok: boolean;
+  error?: string;
+}
+
+async function send(to: string, subject: string, html: string, text: string): Promise<EmailResult> {
   try {
     const res = await connectors.proxy("resend", "/emails", {
       method: "POST",
@@ -24,10 +29,15 @@ async function send(to: string, subject: string, html: string, text: string): Pr
     });
     if (!res.ok) {
       const body = await res.text();
-      console.error(`[email] Failed to send "${subject}" to ${to}: ${res.status} ${body}`);
+      const error = `HTTP ${res.status}: ${body}`;
+      console.error(`[email] Failed to send "${subject}" to ${to}: ${error}`);
+      return { ok: false, error };
     }
+    return { ok: true };
   } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
     console.error("[email] Unexpected error:", err);
+    return { ok: false, error };
   }
 }
 
@@ -260,7 +270,7 @@ export async function sendReceiverPaymentConfirmedEmail(opts: {
   destinationCity: string;
   serviceType: string;
   currency: string;
-}): Promise<void> {
+}): Promise<EmailResult> {
   const { to, recipientName, trackingNumber, originCity, destinationCity, serviceType, currency } = opts;
   const trackUrl = `${APP_URL}/track?number=${trackingNumber}`;
   const html = wrap(
@@ -287,7 +297,7 @@ export async function sendReceiverPaymentConfirmedEmail(opts: {
     </p>
   `);
   const text = `Hi ${recipientName || "there"},\n\nYour ${currency.replace(/_/g, " ")} payment for shipment ${trackingNumber} has been confirmed and the shipment is now being processed.\n\nTracking Number: ${trackingNumber}\nFrom: ${originCity}\nTo: ${destinationCity}\nService: ${serviceType}\nStatus: Processing\n\nTrack your shipment: ${trackUrl}\n\n© ${new Date().getFullYear()} Flexi Route`;
-  await send(to, `Payment Confirmed — ${trackingNumber}`, html, text);
+  return send(to, `Payment Confirmed — ${trackingNumber}`, html, text);
 }
 
 // ── Delivery confirmation ──────────────────────────────────────────────────

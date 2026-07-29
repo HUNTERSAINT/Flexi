@@ -188,7 +188,7 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
           shipment.receiverPays &&
           shipment.recipientEmail
         ) {
-          await sendReceiverPaymentConfirmedEmail({
+          const emailResult = await sendReceiverPaymentConfirmedEmail({
             to: shipment.recipientEmail,
             recipientName: shipment.recipientName ?? "",
             trackingNumber: shipment.trackingNumber,
@@ -197,6 +197,19 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
             serviceType: shipment.serviceType ?? "standard",
             currency: existing.currency,
           });
+
+          if (!emailResult.ok) {
+            req.log.warn({
+              event: "receiver_payment_confirmation_email_failed",
+              paymentId: updated.id,
+              shipmentId: existing.shipmentId,
+              recipientEmail: shipment.recipientEmail,
+              error: emailResult.error,
+            }, "Receiver payment confirmation email failed to deliver");
+          }
+
+          res.json({ ...updated, emailDelivered: emailResult.ok });
+          return;
         }
       }
     }
