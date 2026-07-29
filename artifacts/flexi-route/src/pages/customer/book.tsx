@@ -57,8 +57,8 @@ export default function BookShipment() {
       originAddress: '', originCity: '', originState: '', originZip: '',
       destinationAddress: '', destinationCity: '', destinationState: '', destinationZip: '',
       recipientName: '', recipientPhone: '', recipientEmail: '',
-      receiverPays: false,
-      currency: PaymentInputCurrency.BTC,
+      receiverPays: undefined as unknown as boolean,
+      currency: undefined,
     },
     mode: 'onChange',
   });
@@ -81,6 +81,14 @@ export default function BookShipment() {
   };
 
   const onSubmit = async (data: BookingValues) => {
+    if (typeof data.receiverPays !== 'boolean') {
+      toast.error('Please choose who will pay for this shipment');
+      return;
+    }
+    if (data.receiverPays === false && !data.currency) {
+      toast.error('Please select a cryptocurrency for payment');
+      return;
+    }
     try {
       const shipmentPayload: any = {
         serviceType: data.serviceType,
@@ -322,7 +330,7 @@ export default function BookShipment() {
                       </button>
                     </div>
 
-                    {!watchValues.receiverPays && (
+                    {watchValues.receiverPays === false && (
                       <FormField control={form.control} name="currency" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Select Cryptocurrency</FormLabel>
@@ -342,7 +350,7 @@ export default function BookShipment() {
                       )} />
                     )}
 
-                    {watchValues.receiverPays && (
+                    {watchValues.receiverPays === true && (
                       <div className="space-y-4">
                         <FormField control={form.control} name="recipientEmail" render={({ field }) => (
                           <FormItem>

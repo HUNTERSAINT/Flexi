@@ -70,8 +70,8 @@ export default function BookPublic() {
       originAddress: '', originCity: '', originState: '', originZip: '',
       destinationAddress: '', destinationCity: '', destinationState: '', destinationZip: '',
       recipientName: '', recipientPhone: '', recipientEmail: '',
-      receiverPays: false,
-      currency: 'BTC',
+      receiverPays: undefined as unknown as boolean,
+      currency: undefined,
     },
     mode: 'onChange',
   });
@@ -88,7 +88,10 @@ export default function BookPublic() {
     else if (step === 2) fields = ['serviceType', 'weightKg'];
     else if (step === 3) fields = ['originAddress', 'originCity', 'originState', 'originZip', 'destinationAddress', 'destinationCity', 'destinationState', 'destinationZip'];
     else if (step === 4) {
-      // For receiver pays, just need recipient email; for sender pays, need currency
+      if (typeof watchValues.receiverPays !== 'boolean') {
+        toast.error('Please choose who will pay for this shipment');
+        return;
+      }
       if (watchValues.receiverPays) fields = [];
       else fields = ['currency'];
     }
@@ -349,7 +352,7 @@ export default function BookPublic() {
                       </button>
                     </div>
 
-                    {!watchValues.receiverPays && (
+                    {watchValues.receiverPays === false && (
                       <FormField control={form.control} name="currency" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Select Cryptocurrency</FormLabel>
@@ -369,7 +372,7 @@ export default function BookPublic() {
                       )} />
                     )}
 
-                    {watchValues.receiverPays && (
+                    {watchValues.receiverPays === true && (
                       <div className="space-y-4">
                         <FormField control={form.control} name="recipientEmail" render={({ field }) => (
                           <FormItem>
