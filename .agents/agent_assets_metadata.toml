@@ -36,3 +36,9 @@ id = "BZllq5U7xRiO0GM0pogYF"
 uri = "file://flexi-route-v3.zip"
 type = "unspecified"
 title = "Flexi Route v3 — Source Files"
+
+[[outputs]]
+id = "GibRjF06eErpspdff1xoj"
+uri = "file://flexi-route-updated.zip"
+type = "unspecified"
+title = "Flexi Route — Updated Files (email.ts + payments.ts)"
