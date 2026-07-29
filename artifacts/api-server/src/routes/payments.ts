@@ -205,7 +205,7 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
 
 // POST /api/payments/:id/proof
 router.post("/payments/:id/proof", requireAuth, upload.single("file"), async (req, res) => {
-  try:
+  try {
     const id = parseInt(req.params.id);
     if (!req.file) {
       res.status(400).json({ error: "No file uploaded" });
