@@ -67,17 +67,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Quick access demo card */}
-        <div className="bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4 mb-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-orange-900">Admin Account</p>
-            <p className="text-xs text-orange-700 mt-0.5">nkingsley130@gmail.com · admin134</p>
-          </div>
-          <Button type="button" size="sm" variant="outline" className="shrink-0 border-orange-300 text-orange-700 hover:bg-orange-100" onClick={fillAdmin}>
-            Fill in
-          </Button>
-        </div>
-
         <div className="bg-white py-8 px-4 shadow-xl shadow-black/5 rounded-2xl sm:px-10 border border-gray-100">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
