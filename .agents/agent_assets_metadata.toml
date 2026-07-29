@@ -18,3 +18,9 @@ id = "x5vxSKjEruWzrh5p8KmDe"
 uri = "file://flexi-v2.zip"
 type = "unspecified"
 title = "Flexi Route v2"
+
+[[outputs]]
+id = "7C4ooWxzflnyDnCFaz_wV"
+uri = "file://flexi-route-source.zip"
+type = "unspecified"
+title = "Flexi Route Source Code"
