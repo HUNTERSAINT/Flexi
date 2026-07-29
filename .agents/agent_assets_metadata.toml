@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "oKF14RUxEEHDqBzPCOl97"
+uri = "file://flexi-route-final.zip"
+type = "unspecified"
+title = "flexi-route-final.zip"
