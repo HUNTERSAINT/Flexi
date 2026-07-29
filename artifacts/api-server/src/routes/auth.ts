@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { signToken, requireAuth } from "../middlewares/auth";
+import { sendWelcomeEmail } from "../lib/email";
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.post("/auth/register", async (req, res) => {
       role: "customer",
     }).returning();
     const token = signToken({ id: user.id, email: user.email, role: user.role, name: user.name });
+    sendWelcomeEmail(user.email, user.name).catch(() => {});
     res.status(201).json({
       token,
       user: {

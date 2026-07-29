@@ -9,6 +9,13 @@ import { requireAuth, requireRole, signToken } from "../middlewares/auth";
 import { generateTrackingNumber } from "../lib/trackingNumber";
 import { createNotification } from "../lib/notifications";
 import { getWalletAddresses } from "../lib/wallets";
+import {
+  sendBookingConfirmation,
+  sendReceiverPaysNotification,
+  sendStatusUpdateEmail,
+  sendDriverAssignedEmail,
+  sendDeliveryConfirmationEmail,
+} from "../lib/email";
 
 const router = Router();
 
@@ -142,6 +149,30 @@ router.post("/shipments/guest", async (req, res) => {
 
     await createNotification(customerId, "Shipment Booked", `Your shipment ${trackingNumber} has been booked successfully.`, "shipment_update", shipment.id);
 
+    // Booking confirmation to sender
+    sendBookingConfirmation({
+      to: guestEmail,
+      name: guestName,
+      trackingNumber,
+      originCity: originCity ?? "",
+      destinationCity: destinationCity ?? "",
+      serviceType: serviceType || "standard",
+      receiverPays: !!receiverPays,
+    }).catch(() => {});
+
+    // Notify recipient if they are paying
+    if (receiverPays && recipientEmail) {
+      sendReceiverPaysNotification({
+        to: recipientEmail,
+        recipientName: recipientName ?? "",
+        senderName: guestName,
+        trackingNumber,
+        originCity: originCity ?? "",
+        destinationCity: destinationCity ?? "",
+        serviceType: serviceType || "standard",
+      }).catch(() => {});
+    }
+
     let paymentId: number | null = null;
 
     if (!receiverPays && currency) {
@@ -258,6 +289,30 @@ router.post("/shipments", requireRole("customer", "admin"), async (req, res) => 
 
     await createNotification(customerId, "Shipment Booked", `Your shipment ${trackingNumber} has been booked successfully.`, "shipment_update", shipment.id);
 
+    // Booking confirmation email to the authenticated user
+    sendBookingConfirmation({
+      to: req.user!.email,
+      name: req.user!.name,
+      trackingNumber,
+      originCity: originCity ?? "",
+      destinationCity: destinationCity ?? "",
+      serviceType: serviceType || "standard",
+      receiverPays: !!receiverPays,
+    }).catch(() => {});
+
+    // Notify recipient if they are paying
+    if (receiverPays && recipientEmail) {
+      sendReceiverPaysNotification({
+        to: recipientEmail,
+        recipientName: recipientName ?? "",
+        senderName: req.user!.name,
+        trackingNumber,
+        originCity: originCity ?? "",
+        destinationCity: destinationCity ?? "",
+        serviceType: serviceType || "standard",
+      }).catch(() => {});
+    }
+
     res.status(201).json(serializeShipment(shipment));
   } catch (err) {
     req.log.error(err);
@@ -304,6 +359,18 @@ router.patch("/shipments/:id", requireRole("admin", "driver"), async (req, res) 
     const [updated] = await db.update(shipmentsTable).set(updates).where(eq(shipmentsTable.id, id)).returning();
     if (status && status !== existing.status) {
       await createNotification(existing.customerId, "Shipment Status Updated", `Your shipment ${existing.trackingNumber} status changed to ${status.replace(/_/g, " ")}.`, "shipment_update", id);
+      // Send status update email to customer
+      const [customer] = await db.select({ email: usersTable.email, name: usersTable.name }).from(usersTable).where(eq(usersTable.id, existing.customerId)).limit(1);
+      if (customer) {
+        sendStatusUpdateEmail({
+          to: customer.email,
+          name: customer.name,
+          trackingNumber: existing.trackingNumber,
+          status,
+          originCity: existing.originCity ?? "",
+          destinationCity: existing.destinationCity ?? "",
+        }).catch(() => {});
+      }
     }
     res.json(serializeShipment(updated));
   } catch (err) {
@@ -334,6 +401,22 @@ router.post("/shipments/:id/assign", requireRole("admin"), async (req, res) => {
     const [updated] = await db.update(shipmentsTable).set({ driverId, status: "confirmed", updatedAt: new Date() }).where(eq(shipmentsTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Shipment not found" }); return; }
     await createNotification(updated.customerId, "Driver Assigned", `A driver has been assigned to your shipment ${updated.trackingNumber}.`, "driver_assignment", id);
+
+    // Send driver-assigned email
+    const [customer, driver] = await Promise.all([
+      db.select({ email: usersTable.email, name: usersTable.name }).from(usersTable).where(eq(usersTable.id, updated.customerId)).limit(1),
+      driverId ? db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, parseInt(String(driverId)))).limit(1) : Promise.resolve([]),
+    ]);
+    if (customer[0]) {
+      sendDriverAssignedEmail({
+        to: customer[0].email,
+        name: customer[0].name,
+        trackingNumber: updated.trackingNumber,
+        driverName: driver[0]?.name ?? "your driver",
+        originCity: updated.originCity ?? "",
+        destinationCity: updated.destinationCity ?? "",
+      }).catch(() => {});
+    }
     res.json(serializeShipment(updated));
   } catch (err) {
     req.log.error(err);
@@ -379,6 +462,16 @@ router.post("/shipments/:id/proof", requireRole("driver", "admin"), upload.singl
     if (!updated) { res.status(404).json({ error: "Shipment not found" }); return; }
     await db.insert(trackingEventsTable).values({ shipmentId: id, status: "delivered", description: "Package delivered. Proof of delivery uploaded.", location: req.body.notes || undefined });
     await createNotification(updated.customerId, "Shipment Delivered", `Your shipment ${updated.trackingNumber} has been delivered.`, "shipment_update", id);
+
+    // Send delivery confirmation email
+    const [deliveryCustomer] = await db.select({ email: usersTable.email, name: usersTable.name }).from(usersTable).where(eq(usersTable.id, updated.customerId)).limit(1);
+    if (deliveryCustomer) {
+      sendDeliveryConfirmationEmail({
+        to: deliveryCustomer.email,
+        name: deliveryCustomer.name,
+        trackingNumber: updated.trackingNumber,
+      }).catch(() => {});
+    }
     res.json(serializeShipment(updated));
   } catch (err) {
     req.log.error(err);
