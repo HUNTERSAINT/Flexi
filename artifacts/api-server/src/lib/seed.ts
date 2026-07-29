@@ -2,34 +2,45 @@ import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
+const ADMIN_EMAIL = "nkingsley130@gmail.com";
+const ADMIN_PASSWORD = "admin134";
+const ADMIN_NAME = "Admin";
+
 /**
- * Ensures the owner admin account exists in whatever database this server
- * is connected to (dev or production). Safe to run on every startup —
- * it is a no-op if the account already exists.
+ * Ensures the owner admin account exists and has the correct role + password.
+ * Runs on every server startup — safe on both dev and production.
+ * - If the account doesn't exist → creates it as admin.
+ * - If the account exists but is not admin → promotes it and resets the password.
+ * - If the account exists as admin → no-op.
  */
 export async function seedAdminUser(): Promise<void> {
   try {
-    const email = "nkingsley130@gmail.com";
     const [existing] = await db
-      .select({ id: usersTable.id })
+      .select({ id: usersTable.id, role: usersTable.role })
       .from(usersTable)
-      .where(eq(usersTable.email, email))
+      .where(eq(usersTable.email, ADMIN_EMAIL))
       .limit(1);
 
-    if (existing) return; // already present — nothing to do
+    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
 
-    const passwordHash = await bcrypt.hash("admin134", 12);
-    await db.insert(usersTable).values({
-      name: "Admin",
-      email,
-      passwordHash,
-      role: "admin",
-      isActive: true,
-    });
-
-    console.log("[seed] Admin account created:", email);
+    if (!existing) {
+      await db.insert(usersTable).values({
+        name: ADMIN_NAME,
+        email: ADMIN_EMAIL,
+        passwordHash,
+        role: "admin",
+        isActive: true,
+      });
+      console.log("[seed] Admin account created:", ADMIN_EMAIL);
+    } else if (existing.role !== "admin") {
+      await db
+        .update(usersTable)
+        .set({ role: "admin", passwordHash, isActive: true })
+        .where(eq(usersTable.id, existing.id));
+      console.log("[seed] Account promoted to admin:", ADMIN_EMAIL);
+    }
+    // else: already admin — nothing to do
   } catch (err) {
-    // Non-fatal — log and continue so the server still starts
     console.error("[seed] Could not seed admin user:", err);
   }
 }
