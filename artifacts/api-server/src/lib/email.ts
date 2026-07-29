@@ -102,7 +102,7 @@ export async function sendBookingConfirmation(opts: {
         ${infoRow("Payment", receiverPays ? "Receiver pays" : "Sender pays")}
       </tbody>
     </table>
-    ${btn("Track Your Shipment", `${APP_URL}/track/${trackingNumber}`)}
+    ${btn("Track Your Shipment", `${APP_URL}/track?number=${trackingNumber}`)}
   `);
   await send(to, `Booking Confirmed — ${trackingNumber}`, html);
 }
@@ -131,7 +131,7 @@ export async function sendReceiverPaysNotification(opts: {
         ${infoRow("Service", serviceType.charAt(0).toUpperCase() + serviceType.slice(1))}
       </tbody>
     </table>
-    ${btn("View & Pay Now", `${APP_URL}/track/${trackingNumber}`)}
+    ${btn("View & Pay Now", `${APP_URL}/track?number=${trackingNumber}`)}
   `);
   await send(to, `Payment Required — Shipment from ${senderName}`, html);
 }
@@ -179,7 +179,7 @@ export async function sendStatusUpdateEmail(opts: {
         ${infoRow("Route", `${originCity} → ${destinationCity}`)}
       </tbody>
     </table>
-    ${btn("Track Live", `${APP_URL}/track/${trackingNumber}`)}
+    ${btn("Track Live", `${APP_URL}/track?number=${trackingNumber}`)}
   `);
   await send(to, `Shipment Update: ${label} — ${trackingNumber}`, html);
 }
@@ -206,7 +206,7 @@ export async function sendDriverAssignedEmail(opts: {
         ${infoRow("Route", `${originCity} → ${destinationCity}`)}
       </tbody>
     </table>
-    ${btn("Track Your Shipment", `${APP_URL}/track/${trackingNumber}`)}
+    ${btn("Track Your Shipment", `${APP_URL}/track?number=${trackingNumber}`)}
   `);
   await send(to, `Driver Assigned — ${trackingNumber}`, html);
 }
@@ -223,7 +223,7 @@ export async function sendDeliveryConfirmationEmail(opts: {
     <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
       Hi ${name}, your shipment <strong>${trackingNumber}</strong> has been successfully delivered. Thank you for choosing Flexi Route!
     </p>
-    ${btn("View Delivery Details", `${APP_URL}/track/${trackingNumber}`)}
+    ${btn("View Delivery Details", `${APP_URL}/track?number=${trackingNumber}`)}
   `);
   await send(to, `Delivered — ${trackingNumber}`, html);
 }
