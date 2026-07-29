@@ -2,7 +2,7 @@ import { ReplitConnectors } from "@replit/connectors-sdk";
 
 const connectors = new ReplitConnectors();
 
-const FROM = process.env.EMAIL_FROM ?? "Flexi Route <support@flexiroute.com>";
+const FROM = process.env.EMAIL_FROM ?? "Flexi Route <support@flexirouteglobal.com>";
 const REPLY_TO = process.env.EMAIL_REPLY_TO ?? FROM;
 const APP_URL = process.env.APP_URL ?? "https://flexirouteglobal.com";
 
