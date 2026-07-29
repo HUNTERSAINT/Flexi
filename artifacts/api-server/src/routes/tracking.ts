@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, shipmentsTable, trackingEventsTable, paymentsTable, pricingTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, ne } from "drizzle-orm";
 import { getWalletAddresses } from "../lib/wallets";
 import { createNotification } from "../lib/notifications";
 
@@ -148,18 +148,6 @@ router.post("/track/:trackingNumber/pay", async (req, res) => {
       return;
     }
 
-    // Check no confirmed/pending payment already exists
-    const [existingPayment] = await db
-      .select()
-      .from(paymentsTable)
-      .where(eq(paymentsTable.shipmentId, shipment.id))
-      .limit(1);
-
-    if (existingPayment && existingPayment.status === "confirmed") {
-      res.status(409).json({ error: "Payment already confirmed for this shipment" });
-      return;
-    }
-
     // Calculate amount
     let amount = shipment.totalAmount ? Number(shipment.totalAmount) : 0;
     if (!amount && shipment.weightKg) {
@@ -180,11 +168,10 @@ router.post("/track/:trackingNumber/pay", async (req, res) => {
       return;
     }
 
-    // Upsert: delete old pending payment if exists, create new one
-    if (existingPayment && existingPayment.status === "awaiting_payment") {
-      await db.delete(paymentsTable).where(eq(paymentsTable.id, existingPayment.id));
-    }
-
+    // Upsert: INSERT ... ON CONFLICT (shipment_id) DO UPDATE — only if the
+    // existing row is still awaiting_payment (i.e. receiver is switching currency).
+    // Confirmed or under-review payments are left untouched; RETURNING returns
+    // nothing in that case, which we detect below.
     const [payment] = await db
       .insert(paymentsTable)
       .values({
@@ -194,7 +181,34 @@ router.post("/track/:trackingNumber/pay", async (req, res) => {
         walletAddress,
         status: "awaiting_payment",
       })
+      .onConflictDoUpdate({
+        target: paymentsTable.shipmentId,
+        set: {
+          currency: currency as any,
+          walletAddress,
+          amount: amount.toFixed(2),
+          status: "awaiting_payment" as any,
+          updatedAt: new Date(),
+        },
+        setWhere: eq(paymentsTable.status, "awaiting_payment"),
+      })
       .returning();
+
+    if (!payment) {
+      // The conflict row exists but was not updated — it is confirmed or under review.
+      const [existing] = await db
+        .select({ status: paymentsTable.status })
+        .from(paymentsTable)
+        .where(eq(paymentsTable.shipmentId, shipment.id))
+        .limit(1);
+
+      if (existing?.status === "confirmed") {
+        res.status(409).json({ error: "Payment already confirmed for this shipment" });
+      } else {
+        res.status(409).json({ error: "Payment is under review and cannot be changed" });
+      }
+      return;
+    }
 
     res.status(201).json({
       ...payment,

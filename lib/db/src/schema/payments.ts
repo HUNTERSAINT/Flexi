@@ -23,6 +23,7 @@ export const paymentsTable = pgTable("payments", {
   id: serial("id").primaryKey(),
   shipmentId: integer("shipment_id")
     .notNull()
+    .unique()
     .references(() => shipmentsTable.id),
   amount: numeric("amount").notNull(),
   currency: cryptoCurrencyEnum("currency").notNull(),
