@@ -27,6 +27,11 @@ export default function Login() {
     defaultValues: { email: '', password: '' },
   });
 
+  const fillAdmin = () => {
+    form.setValue('email', 'admin@flexiroute.com');
+    form.setValue('password', 'Admin1234!');
+  };
+
   const loginMutation = useLogin();
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -60,6 +65,17 @@ export default function Login() {
           <p className="mt-2 text-gray-600">
             Or <Link href="/register" className="text-primary font-medium hover:underline">create a new account</Link>
           </p>
+        </div>
+
+        {/* Quick access demo card */}
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4 mb-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-orange-900">Admin Demo Account</p>
+            <p className="text-xs text-orange-700 mt-0.5">admin@flexiroute.com · Admin1234!</p>
+          </div>
+          <Button type="button" size="sm" variant="outline" className="shrink-0 border-orange-300 text-orange-700 hover:bg-orange-100" onClick={fillAdmin}>
+            Fill in
+          </Button>
         </div>
 
         <div className="bg-white py-8 px-4 shadow-xl shadow-black/5 rounded-2xl sm:px-10 border border-gray-100">
