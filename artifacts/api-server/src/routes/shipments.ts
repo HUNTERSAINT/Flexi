@@ -229,13 +229,62 @@ router.get("/shipments", requireAuth, async (req, res) => {
     );
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const customerAlias = { customerName: usersTable.name };
     const [totalResult, shipments] = await Promise.all([
       db.select({ count: count() }).from(shipmentsTable).where(whereClause),
-      db.select().from(shipmentsTable).where(whereClause).orderBy(desc(shipmentsTable.createdAt)).limit(limitNum).offset(offset),
+      db
+        .select({
+          id: shipmentsTable.id,
+          trackingNumber: shipmentsTable.trackingNumber,
+          customerId: shipmentsTable.customerId,
+          driverId: shipmentsTable.driverId,
+          serviceType: shipmentsTable.serviceType,
+          status: shipmentsTable.status,
+          originAddress: shipmentsTable.originAddress,
+          originCity: shipmentsTable.originCity,
+          originState: shipmentsTable.originState,
+          originZip: shipmentsTable.originZip,
+          destinationAddress: shipmentsTable.destinationAddress,
+          destinationCity: shipmentsTable.destinationCity,
+          destinationState: shipmentsTable.destinationState,
+          destinationZip: shipmentsTable.destinationZip,
+          weightKg: shipmentsTable.weightKg,
+          dimensions: shipmentsTable.dimensions,
+          description: shipmentsTable.description,
+          senderName: shipmentsTable.senderName,
+          senderPhone: shipmentsTable.senderPhone,
+          recipientName: shipmentsTable.recipientName,
+          recipientPhone: shipmentsTable.recipientPhone,
+          recipientEmail: shipmentsTable.recipientEmail,
+          receiverPays: shipmentsTable.receiverPays,
+          estimatedDelivery: shipmentsTable.estimatedDelivery,
+          deliveryProofUrl: shipmentsTable.deliveryProofUrl,
+          totalAmount: shipmentsTable.totalAmount,
+          createdAt: shipmentsTable.createdAt,
+          updatedAt: shipmentsTable.updatedAt,
+          customerName: usersTable.name,
+        })
+        .from(shipmentsTable)
+        .leftJoin(usersTable, eq(shipmentsTable.customerId, usersTable.id))
+        .where(whereClause)
+        .orderBy(desc(shipmentsTable.createdAt))
+        .limit(limitNum)
+        .offset(offset),
     ]);
 
+    // Attach driver names in a second pass (separate join to avoid cartesian issues)
+    const driverIds = [...new Set(shipments.map(s => s.driverId).filter(Boolean))] as number[];
+    const driverNames: Record<number, string> = {};
+    if (driverIds.length > 0) {
+      const driverUsers = await db
+        .select({ id: usersTable.id, name: usersTable.name })
+        .from(usersTable)
+        .where(eq(usersTable.role, "driver"));
+      driverUsers.forEach(d => { driverNames[d.id] = d.name; });
+    }
+
     res.json({
-      data: shipments.map(serializeShipment),
+      data: shipments.map(s => serializeShipment({ ...s, driverName: s.driverId ? (driverNames[s.driverId] ?? null) : null })),
       total: Number(totalResult[0]?.count ?? 0),
       page: pageNum,
       limit: limitNum,

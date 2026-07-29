@@ -32,7 +32,8 @@ export default function AdminDrivers() {
     search: search || undefined
   });
 
-  const drivers = driversResponse?.data || [];
+  // API returns Driver[] directly (not {data: Driver[]})
+  const drivers = (driversResponse as any) || [];
   const queryClient = useQueryClient();
   const updateDriver = useUpdateDriver();
   const deleteDriver = useDeleteDriver();

@@ -52,7 +52,9 @@ export default function AdminShipments() {
             <SelectItem value="confirmed">Confirmed</SelectItem>
             <SelectItem value="processing">Processing</SelectItem>
             <SelectItem value="in_transit">In Transit</SelectItem>
+            <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -147,6 +149,9 @@ function ShipmentActions({ shipment }: { shipment: any }) {
           <div className="border-t border-gray-100 my-1"></div>
           <DropdownMenuItem onClick={() => handleStatusChange('confirmed')}>Set Confirmed</DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleStatusChange('processing')}>Set Processing</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleStatusChange('in_transit')}>Set In Transit</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleStatusChange('out_for_delivery')}>Set Out for Delivery</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleStatusChange('delivered')}>Set Delivered</DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleStatusChange('cancelled')} className="text-red-600">Cancel Shipment</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -194,7 +199,7 @@ function AssignDriverDialog({ shipmentId, currentDriverId, open, onOpenChange }:
               <SelectValue placeholder="Select an available driver" />
             </SelectTrigger>
             <SelectContent>
-              {driversResponse?.data.map(driver => (
+              {(driversResponse as any)?.map((driver: any) => (
                 <SelectItem key={driver.id} value={driver.id.toString()}>
                   {driver.name} ({driver.vehicleType || 'No vehicle'})
                 </SelectItem>
