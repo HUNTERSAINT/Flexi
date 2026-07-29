@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useSearch } from 'wouter';
 import { useTrackShipment } from '@workspace/api-client-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,10 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { format } from 'date-fns';
 
 export default function Track() {
-  const [locationPath] = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
+  const search = useSearch();
+  const searchParams = new URLSearchParams(search);
   const initialTracking = searchParams.get('number') || '';
-  
+
   const [trackingInput, setTrackingInput] = useState(initialTracking);
   const [activeTracking, setActiveTracking] = useState(initialTracking);
 
@@ -36,14 +36,14 @@ export default function Track() {
   };
 
   useEffect(() => {
-    // Sync active state if URL changes externally
-    const currentParams = new URLSearchParams(window.location.search);
+    // Sync active state when the URL search string changes (e.g. navigation)
+    const currentParams = new URLSearchParams(search);
     const num = currentParams.get('number');
     if (num && num !== activeTracking) {
       setTrackingInput(num);
       setActiveTracking(num);
     }
-  }, [window.location.search]);
+  }, [search]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">

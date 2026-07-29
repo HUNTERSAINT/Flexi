@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Switch, Router as WouterRouter, Redirect } from 'wouter';
+import { Route, Switch, Router as WouterRouter, Redirect, useParams, useLocation } from 'wouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -67,6 +67,9 @@ function AppRouter() {
       </Route>
       <Route path="/track">
         <PublicLayout><Track /></PublicLayout>
+      </Route>
+      <Route path="/track/:number">
+        {(params) => <Redirect to={`/track?number=${params.number}`} />}
       </Route>
       <Route path="/pricing">
         <PublicLayout><Pricing /></PublicLayout>
