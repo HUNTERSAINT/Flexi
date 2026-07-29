@@ -4,7 +4,7 @@ import fs from "fs";
 import multer from "multer";
 import { db, paymentsTable, shipmentsTable } from "@workspace/db";
 import { eq, and, count, desc, SQL } from "drizzle-orm";
-import { requireAuth, requireRole } from "../middlewares/auth";
+import { requireAuth } from "../middlewares/auth";
 import { getWalletAddresses } from "../lib/wallets";
 import { createNotification } from "../lib/notifications";
 import { sendReceiverPaymentConfirmedEmail } from "../lib/email";
@@ -42,19 +42,19 @@ router.get("/payments", requireAuth, async (req, res) => {
 
     // Customers only see their own payments
     if (req.user!.role === "customer") {
-      // join through shipments
-      const myShipments = await db.select({ id: shipmentsTable.id }).from(shipmentsTable).where(eq(shipmentsTable.customerId, req.user!.id));
+      const myShipments = await db
+        .select({ id: shipmentsTable.id })
+        .from(shipmentsTable)
+        .where(eq(shipmentsTable.customerId, req.user!.id));
       if (myShipments.length === 0) {
         res.json({ data: [], total: 0, page: pageNum, limit: limitNum });
         return;
       }
-      // Filter payments by shipment IDs belonging to this customer
-      // Use IN clause manually
       const shipmentIds = myShipments.map((s) => s.id);
-      // Add each shipmentId as an OR condition
-      const shipmentCondition = shipmentIds.length === 1
-        ? eq(paymentsTable.shipmentId, shipmentIds[0])
-        : and(...shipmentIds.map((sid) => eq(paymentsTable.shipmentId, sid)));
+      const shipmentCondition =
+        shipmentIds.length === 1
+          ? eq(paymentsTable.shipmentId, shipmentIds[0])
+          : and(...shipmentIds.map((sid) => eq(paymentsTable.shipmentId, sid)));
       if (shipmentCondition) conditions.push(shipmentCondition);
     }
 
@@ -62,7 +62,13 @@ router.get("/payments", requireAuth, async (req, res) => {
 
     const [totalResult, payments] = await Promise.all([
       db.select({ count: count() }).from(paymentsTable).where(whereClause),
-      db.select().from(paymentsTable).where(whereClause).orderBy(desc(paymentsTable.createdAt)).limit(limitNum).offset(offset),
+      db
+        .select()
+        .from(paymentsTable)
+        .where(whereClause)
+        .orderBy(desc(paymentsTable.createdAt))
+        .limit(limitNum)
+        .offset(offset),
     ]);
 
     res.json({
@@ -92,34 +98,25 @@ router.post("/payments", requireAuth, async (req, res) => {
       return;
     }
     // Verify shipment exists
-      const [shipment] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, existing.shipmentId)).limit(1);
+    const [shipment] = await db
+      .select()
+      .from(shipmentsTable)
+      .where(eq(shipmentsTable.id, parseInt(shipmentId)))
+      .limit(1);
     if (!shipment) {
       res.status(404).json({ error: "Shipment not found" });
       return;
     }
-
-    const [payment] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, id)).limit(1);
-    if (!payment) {
-      res.status(404).json({ error: "Payment not found" });
-      return;
-    }
-    res.json(payment);
-  } catch (err) {
-    req.log.error(err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// PATCH /api/payments/:id
-router.patch("/payments/:id", requireAuth, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const [payment] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, id)).limit(1);
-    if (!payment) {
-      res.status(404).json({ error: "Payment not found" });
-      return;
-    }
-    res.json(payment);
+    const [payment] = await db
+      .insert(paymentsTable)
+      .values({
+        shipmentId: parseInt(shipmentId),
+        amount: amount.toString(),
+        currency,
+        walletAddress,
+      })
+      .returning();
+    res.status(201).json(payment);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
@@ -132,7 +129,11 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
     const id = parseInt(req.params.id);
     const { txid, status, adminNotes } = req.body;
 
-    const [existing] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, id)).limit(1);
+    const [existing] = await db
+      .select()
+      .from(paymentsTable)
+      .where(eq(paymentsTable.id, id))
+      .limit(1);
     if (!existing) {
       res.status(404).json({ error: "Payment not found" });
       return;
@@ -154,25 +155,33 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
 
       // If confirmed, update shipment status
       if (status === "confirmed") {
-        await db.update(shipmentsTable).set({ status: "processing", updatedAt: new Date() }).where(eq(shipmentsTable.id, existing.shipmentId));
+        await db
+          .update(shipmentsTable)
+          .set({ status: "processing", updatedAt: new Date() })
+          .where(eq(shipmentsTable.id, existing.shipmentId));
       }
     }
 
     const [updated] = await db
       .update(paymentsTable)
-      .set({ paymentProofUrl: proofUrl, updatedAt: new Date() })
+      .set(updates)
       .where(eq(paymentsTable.id, id))
       .returning();
 
     // Notify customer + receiver (if receiver-pays confirmation)
     if (status) {
-      const [shipment] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, existing.shipmentId)).limit(1);
+      const [shipment] = await db
+        .select()
+        .from(shipmentsTable)
+        .where(eq(shipmentsTable.id, existing.shipmentId))
+        .limit(1);
       if (shipment) {
-        const msg = status === "confirmed"
-          ? "Your payment has been confirmed. Your shipment is now being processed."
-          : status === "rejected"
-          ? `Your payment was rejected. ${adminNotes || "Please contact support."}`
-          : "Your payment is under review.";
+        const msg =
+          status === "confirmed"
+            ? "Your payment has been confirmed. Your shipment is now being processed."
+            : status === "rejected"
+            ? `Your payment was rejected. ${adminNotes || "Please contact support."}`
+            : "Your payment is under review.";
         await createNotification(shipment.customerId, "Payment Update", msg, "payment_update", id);
 
         // Email the receiver when an admin confirms a receiver-pays payment.
