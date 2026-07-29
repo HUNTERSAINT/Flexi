@@ -73,7 +73,7 @@ export default function AdminPayments() {
                     <td className="px-6 py-4"><StatusBadge status={payment.status as any} /></td>
                     <td className="px-6 py-4 text-gray-500">{format(new Date(payment.createdAt), 'MMM d, yyyy')}</td>
                     <td className="px-6 py-4 text-right">
-                      {payment.status === 'under_review' ? (
+                      {(payment.status === 'under_review' || payment.status === 'awaiting_payment') ? (
                         <ReviewAction payment={payment} />
                       ) : payment.status === 'confirmed' ? (
                         <span className="text-green-600 flex justify-end"><CheckCircle2 className="h-5 w-5" /></span>

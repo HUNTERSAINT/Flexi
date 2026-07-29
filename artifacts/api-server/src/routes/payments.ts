@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import { db, paymentsTable, shipmentsTable } from "@workspace/db";
-import { eq, and, count, desc, SQL } from "drizzle-orm";
+import { eq, and, inArray, count, desc, SQL } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import { getWalletAddresses } from "../lib/wallets";
 import { createNotification } from "../lib/notifications";
@@ -51,11 +51,7 @@ router.get("/payments", requireAuth, async (req, res) => {
         return;
       }
       const shipmentIds = myShipments.map((s) => s.id);
-      const shipmentCondition =
-        shipmentIds.length === 1
-          ? eq(paymentsTable.shipmentId, shipmentIds[0])
-          : and(...shipmentIds.map((sid) => eq(paymentsTable.shipmentId, sid)));
-      if (shipmentCondition) conditions.push(shipmentCondition);
+      conditions.push(inArray(paymentsTable.shipmentId, shipmentIds));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -198,7 +194,7 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
             trackingNumber: shipment.trackingNumber,
             originCity: shipment.originCity,
             destinationCity: shipment.destinationCity,
-            serviceType: shipment.serviceType,
+            serviceType: shipment.serviceType ?? "standard",
             currency: existing.currency,
           });
         }

@@ -408,12 +408,23 @@ router.patch("/shipments/:id", requireRole("admin", "driver"), async (req, res) 
     const [updated] = await db.update(shipmentsTable).set(updates).where(eq(shipmentsTable.id, id)).returning();
     if (status && status !== existing.status) {
       await createNotification(existing.customerId, "Shipment Status Updated", `Your shipment ${existing.trackingNumber} status changed to ${status.replace(/_/g, " ")}.`, "shipment_update", id);
-      // Send status update email to customer
+      // Send status update email to sender (customer)
       const [customer] = await db.select({ email: usersTable.email, name: usersTable.name }).from(usersTable).where(eq(usersTable.id, existing.customerId)).limit(1);
       if (customer) {
         sendStatusUpdateEmail({
           to: customer.email,
           name: customer.name,
+          trackingNumber: existing.trackingNumber,
+          status,
+          originCity: existing.originCity ?? "",
+          destinationCity: existing.destinationCity ?? "",
+        }).catch(() => {});
+      }
+      // Send status update email to recipient (receiver) if email is on file
+      if (existing.recipientEmail) {
+        sendStatusUpdateEmail({
+          to: existing.recipientEmail,
+          name: existing.recipientName ?? "there",
           trackingNumber: existing.trackingNumber,
           status,
           originCity: existing.originCity ?? "",

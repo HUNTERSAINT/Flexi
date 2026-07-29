@@ -42,3 +42,9 @@ id = "GibRjF06eErpspdff1xoj"
 uri = "file://flexi-route-updated.zip"
 type = "unspecified"
 title = "Flexi Route — Updated Files (email.ts + payments.ts)"
+
+[[outputs]]
+id = "v8m9Jy8ajS5F2wkJjjmOT"
+uri = "file://flexi-route-fixes.zip"
+type = "unspecified"
+title = "Flexi Route — Bug Fixes (payments.ts + shipments.ts + admin/payments.tsx)"
