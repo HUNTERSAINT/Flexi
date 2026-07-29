@@ -48,3 +48,9 @@ id = "v8m9Jy8ajS5F2wkJjjmOT"
 uri = "file://flexi-route-fixes.zip"
 type = "unspecified"
 title = "Flexi Route — Bug Fixes (payments.ts + shipments.ts + admin/payments.tsx)"
+
+[[outputs]]
+id = "Pry7uaepj9t58H9f9rhe9"
+uri = "file://flexi-route-wallets.zip"
+type = "unspecified"
+title = "Flexi Route — XRP + Wallet Admin (all changed files)"
