@@ -346,6 +346,25 @@ export interface WalletAddresses {
   USDT_ERC20: string;
   USDC: string;
   LTC: string;
+  XRP: string;
+}
+
+export interface Wallet {
+  id: number;
+  currency: string;
+  label: string;
+  network: string;
+  address: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WalletUpdate {
+  label?: string;
+  network?: string;
+  address?: string;
+  isActive?: boolean;
 }
 
 export interface Driver {

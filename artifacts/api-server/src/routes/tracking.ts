@@ -6,7 +6,7 @@ import { createNotification } from "../lib/notifications";
 
 const router = Router();
 
-const CURRENCIES = ["BTC", "ETH", "USDT_TRC20", "USDT_ERC20", "USDC", "LTC"] as const;
+const CURRENCIES = ["BTC", "ETH", "USDT_TRC20", "USDT_ERC20", "USDC", "LTC", "XRP"] as const;
 
 // GET /api/track/:trackingNumber — public
 router.get("/track/:trackingNumber", async (req, res) => {
@@ -161,8 +161,8 @@ router.post("/track/:trackingNumber/pay", async (req, res) => {
       }
     }
 
-    const wallets = getWalletAddresses();
-    const walletAddress = wallets[currency as keyof typeof wallets];
+    const wallets = await getWalletAddresses();
+    const walletAddress = wallets[currency as string];
     if (!walletAddress) {
       res.status(400).json({ error: "Unsupported currency" });
       return;

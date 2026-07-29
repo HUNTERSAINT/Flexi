@@ -23,11 +23,6 @@ const proofStorage = multer.diskStorage({
 });
 const upload = multer({ storage: proofStorage, limits: { fileSize: 10 * 1024 * 1024 } });
 
-// GET /api/wallets
-router.get("/wallets", requireAuth, (_req, res) => {
-  res.json(getWalletAddresses());
-});
-
 // GET /api/payments
 router.get("/payments", requireAuth, async (req, res) => {
   try {
@@ -87,8 +82,8 @@ router.post("/payments", requireAuth, async (req, res) => {
       res.status(400).json({ error: "shipmentId, amount, and currency are required" });
       return;
     }
-    const wallets = getWalletAddresses();
-    const walletAddress = wallets[currency as keyof typeof wallets];
+    const wallets = await getWalletAddresses();
+    const walletAddress = wallets[currency as string];
     if (!walletAddress) {
       res.status(400).json({ error: "Unsupported currency" });
       return;

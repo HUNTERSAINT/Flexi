@@ -9,6 +9,7 @@ import driversRouter from "./drivers";
 import notificationsRouter from "./notifications";
 import adminRouter from "./admin";
 import pricingRouter from "./pricing";
+import walletsRouter from "./wallets";
 import trackingRouter from "./tracking";
 import express from "express";
 import fs from "fs";
@@ -29,6 +30,7 @@ router.use(driversRouter);
 router.use(notificationsRouter);
 router.use(adminRouter);
 router.use(pricingRouter);
+router.use(walletsRouter);
 router.use(trackingRouter);
 
 export default router;

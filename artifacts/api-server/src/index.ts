@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedAdminUser } from "./lib/seed";
+import { seedAdminUser, seedWallets } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -26,4 +26,6 @@ app.listen(port, (err) => {
 
   // Ensure the owner admin account exists (dev + production)
   seedAdminUser();
+  // Ensure all supported crypto wallets have a DB row
+  seedWallets();
 });

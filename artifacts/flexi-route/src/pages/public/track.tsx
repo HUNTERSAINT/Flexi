@@ -10,7 +10,7 @@ import { Search, MapPin, CheckCircle2, Clock, Truck, Package, AlertCircle, Credi
 import { StatusBadge } from '@/components/ui/status-badge';
 import { format } from 'date-fns';
 
-const CURRENCIES = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC'] as const;
+const CURRENCIES = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC', 'XRP'] as const;
 
 type PayStep = 'select' | 'address' | 'done';
 

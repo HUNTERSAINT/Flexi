@@ -5,3 +5,4 @@ export * from "./drivers";
 export * from "./notifications";
 export * from "./trackingEvents";
 export * from "./pricing";
+export * from "./wallets";

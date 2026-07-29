@@ -57,7 +57,9 @@ import type {
   UserLogin,
   UserRegistration,
   UserUpdate,
-  WalletAddresses
+  Wallet,
+  WalletAddresses,
+  WalletUpdate
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -2876,4 +2878,70 @@ export const useUpdatePricing = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getUpdatePricingMutationOptions(options));
     }
+
+
+// ─── Wallets ────────────────────────────────────────────────────────────────
+
+export const getListWalletsUrl = () => `/api/wallets`;
+
+/** @summary Get all wallet configurations */
+export const listWallets = async (options?: Parameters<typeof customFetch>[1]): Promise<Wallet[]> => {
+  return customFetch<Wallet[]>(getListWalletsUrl(), { method: 'GET', ...options });
+};
+
+export const getListWalletsQueryKey = () => ['listWallets'] as const;
+
+export const getListWalletsQueryOptions = <TData = Awaited<ReturnType<typeof listWallets>>, TError = ErrorType<unknown>>(
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof listWallets>>, TError, TData>, request?: SecondParameter<typeof customFetch> }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListWalletsQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listWallets>>> = ({ signal }) => listWallets({ signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof listWallets>>, TError, TData> & { queryKey: QueryKey };
+};
+
+/** @summary Get all wallet configurations */
+export function useListWallets<TData = Awaited<ReturnType<typeof listWallets>>, TError = ErrorType<unknown>>(
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof listWallets>>, TError, TData>, request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListWalletsQueryOptions(options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  query.queryKey = queryOptions.queryKey;
+  return query;
+}
+
+export const getUpdateWalletUrl = (id: number) => `/api/wallets/${id}`;
+
+/** @summary Update wallet (admin only) */
+export const updateWallet = async (id: number, walletUpdate: BodyType<WalletUpdate>, options?: Parameters<typeof customFetch>[1]): Promise<Wallet> => {
+  return customFetch<Wallet>(getUpdateWalletUrl(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(walletUpdate),
+    ...options,
+  });
+};
+
+export const getUpdateWalletMutationOptions = <TError = ErrorType<unknown>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateWallet>>, TError, { id: number; data: BodyType<WalletUpdate> }, TContext>, request?: SecondParameter<typeof customFetch> }
+): UseMutationOptions<Awaited<ReturnType<typeof updateWallet>>, TError, { id: number; data: BodyType<WalletUpdate> }, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationKey = ['updateWallet'];
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateWallet>>, { id: number; data: BodyType<WalletUpdate> }> = (props) => {
+    const { id, data } = props ?? {};
+    return updateWallet(id, data, requestOptions);
+  };
+  return { mutationKey, mutationFn, ...mutationOptions };
+};
+
+export type UpdateWalletMutationResult = NonNullable<Awaited<ReturnType<typeof updateWallet>>>;
+export type UpdateWalletMutationBody = BodyType<WalletUpdate>;
+export type UpdateWalletMutationError = ErrorType<unknown>;
+
+/** @summary Update wallet (admin only) */
+export const useUpdateWallet = <TError = ErrorType<unknown>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateWallet>>, TError, { id: number; data: BodyType<WalletUpdate> }, TContext>, request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof updateWallet>>, TError, { id: number; data: BodyType<WalletUpdate> }, TContext> => {
+  return useMutation(getUpdateWalletMutationOptions(options));
+};
 
