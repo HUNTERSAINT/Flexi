@@ -1,0 +1,1 @@
+- [Flexi Route setup](flexi-route-setup.md) — Full-stack logistics app; key bootstrap decisions and schema notes.

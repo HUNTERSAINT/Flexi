@@ -1,0 +1,389 @@
+import { Router } from "express";
+import path from "path";
+import fs from "fs";
+import multer from "multer";
+import bcrypt from "bcryptjs";
+import { db, shipmentsTable, trackingEventsTable, paymentsTable, usersTable } from "@workspace/db";
+import { eq, and, ilike, or, count, desc, SQL } from "drizzle-orm";
+import { requireAuth, requireRole, signToken } from "../middlewares/auth";
+import { generateTrackingNumber } from "../lib/trackingNumber";
+import { createNotification } from "../lib/notifications";
+import { getWalletAddresses } from "../lib/wallets";
+
+const router = Router();
+
+const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `delivery-${Date.now()}${ext}`);
+  },
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+function serializeShipment(s: any) {
+  return {
+    id: s.id,
+    trackingNumber: s.trackingNumber,
+    customerId: s.customerId,
+    driverId: s.driverId,
+    customerName: (s as any).customerName ?? null,
+    driverName: (s as any).driverName ?? null,
+    serviceType: s.serviceType,
+    status: s.status,
+    originAddress: s.originAddress,
+    originCity: s.originCity,
+    originState: s.originState,
+    originZip: s.originZip,
+    destinationAddress: s.destinationAddress,
+    destinationCity: s.destinationCity,
+    destinationState: s.destinationState,
+    destinationZip: s.destinationZip,
+    weightKg: s.weightKg,
+    dimensions: s.dimensions,
+    description: s.description,
+    senderName: s.senderName,
+    senderPhone: s.senderPhone,
+    recipientName: s.recipientName,
+    recipientPhone: s.recipientPhone,
+    recipientEmail: s.recipientEmail,
+    receiverPays: s.receiverPays,
+    estimatedDelivery: s.estimatedDelivery,
+    deliveryProofUrl: s.deliveryProofUrl,
+    totalAmount: s.totalAmount,
+    createdAt: s.createdAt,
+    updatedAt: s.updatedAt,
+  };
+}
+
+async function generateUniqueTrackingNumber(): Promise<string> {
+  let trackingNumber: string = "";
+  let attempts = 0;
+  do {
+    trackingNumber = generateTrackingNumber();
+    attempts++;
+    if (attempts > 10) break;
+    const existing = await db.select({ id: shipmentsTable.id }).from(shipmentsTable).where(eq(shipmentsTable.trackingNumber, trackingNumber)).limit(1);
+    if (existing.length === 0) break;
+  } while (true);
+  return trackingNumber;
+}
+
+// POST /api/shipments/guest — No auth required, creates account automatically
+router.post("/shipments/guest", async (req, res) => {
+  try {
+    const {
+      guestName, guestEmail, guestPhone,
+      serviceType, originAddress, originCity, originState, originZip,
+      destinationAddress, destinationCity, destinationState, destinationZip,
+      weightKg, dimensions, description,
+      recipientName, recipientPhone, recipientEmail,
+      receiverPays, currency,
+    } = req.body;
+
+    if (!guestName || !guestEmail || !originAddress || !destinationAddress || !weightKg) {
+      res.status(400).json({ error: "Missing required fields: guestName, guestEmail, originAddress, destinationAddress, weightKg" });
+      return;
+    }
+
+    // Find or create user account
+    let customerId: number;
+    let token: string;
+
+    const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, guestEmail.toLowerCase())).limit(1);
+
+    if (existingUser) {
+      customerId = existingUser.id;
+      token = signToken({ id: existingUser.id, email: existingUser.email, role: existingUser.role, name: existingUser.name });
+    } else {
+      // Auto-create a customer account
+      const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+      const passwordHash = await bcrypt.hash(tempPassword, 12);
+      const [newUser] = await db.insert(usersTable).values({
+        name: guestName,
+        email: guestEmail.toLowerCase(),
+        passwordHash,
+        phone: guestPhone || null,
+        role: "customer",
+      }).returning();
+      customerId = newUser.id;
+      token = signToken({ id: newUser.id, email: newUser.email, role: newUser.role, name: newUser.name });
+    }
+
+    const trackingNumber = await generateUniqueTrackingNumber();
+
+    const [shipment] = await db.insert(shipmentsTable).values({
+      trackingNumber,
+      customerId,
+      serviceType: serviceType || "standard",
+      status: "pending",
+      originAddress, originCity, originState, originZip,
+      destinationAddress, destinationCity, destinationState, destinationZip,
+      weightKg: String(weightKg),
+      dimensions, description,
+      senderName: guestName,
+      senderPhone: guestPhone || null,
+      recipientName: recipientName || null,
+      recipientPhone: recipientPhone || null,
+      recipientEmail: recipientEmail || null,
+      receiverPays: !!receiverPays,
+    }).returning();
+
+    // Create initial tracking event
+    await db.insert(trackingEventsTable).values({
+      shipmentId: shipment.id,
+      status: "pending",
+      description: "Shipment booked and awaiting processing",
+      location: originCity,
+    });
+
+    await createNotification(customerId, "Shipment Booked", `Your shipment ${trackingNumber} has been booked successfully.`, "shipment_update", shipment.id);
+
+    let paymentId: number | null = null;
+
+    if (!receiverPays && currency) {
+      // Create payment record for sender
+      const wallets = getWalletAddresses();
+      const walletAddress = wallets[currency as keyof typeof wallets];
+      if (walletAddress) {
+        // Rough price calculation (use a default if pricing table isn't seeded)
+        const amount = 0; // will be set properly by pricing
+        const [payment] = await db.insert(paymentsTable).values({
+          shipmentId: shipment.id,
+          amount: String(amount),
+          currency,
+          walletAddress,
+          status: "awaiting_payment",
+        }).returning();
+        paymentId = payment.id;
+      }
+    }
+
+    res.status(201).json({
+      trackingNumber: shipment.trackingNumber,
+      shipmentId: shipment.id,
+      paymentId,
+      token,
+      receiverPays: !!receiverPays,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /api/shipments
+router.get("/shipments", requireAuth, async (req, res) => {
+  try {
+    const { status, search, page = "1", limit = "20", customerId, driverId } = req.query as Record<string, string>;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, parseInt(limit));
+    const offset = (pageNum - 1) * limitNum;
+
+    const conditions: SQL[] = [];
+    if (req.user!.role === "customer") conditions.push(eq(shipmentsTable.customerId, req.user!.id));
+    if (req.user!.role === "driver") conditions.push(eq(shipmentsTable.driverId, req.user!.id));
+    if (req.user!.role === "admin" && customerId) conditions.push(eq(shipmentsTable.customerId, parseInt(customerId)));
+    if (req.user!.role === "admin" && driverId) conditions.push(eq(shipmentsTable.driverId, parseInt(driverId)));
+    if (status) conditions.push(eq(shipmentsTable.status, status as any));
+    if (search) conditions.push(
+      or(
+        ilike(shipmentsTable.trackingNumber, `%${search}%`),
+        ilike(shipmentsTable.originCity, `%${search}%`),
+        ilike(shipmentsTable.destinationCity, `%${search}%`),
+      )!
+    );
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const [totalResult, shipments] = await Promise.all([
+      db.select({ count: count() }).from(shipmentsTable).where(whereClause),
+      db.select().from(shipmentsTable).where(whereClause).orderBy(desc(shipmentsTable.createdAt)).limit(limitNum).offset(offset),
+    ]);
+
+    res.json({
+      data: shipments.map(serializeShipment),
+      total: Number(totalResult[0]?.count ?? 0),
+      page: pageNum,
+      limit: limitNum,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/shipments (authenticated)
+router.post("/shipments", requireRole("customer", "admin"), async (req, res) => {
+  try {
+    const {
+      serviceType, originAddress, originCity, originState, originZip,
+      destinationAddress, destinationCity, destinationState, destinationZip,
+      weightKg, dimensions, description,
+      senderName, senderPhone, recipientName, recipientPhone, recipientEmail,
+      receiverPays,
+    } = req.body;
+
+    if (!originAddress || !destinationAddress || !weightKg) {
+      res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    const trackingNumber = await generateUniqueTrackingNumber();
+    const customerId = req.user!.role === "admin" ? (req.body.customerId || req.user!.id) : req.user!.id;
+
+    const [shipment] = await db.insert(shipmentsTable).values({
+      trackingNumber,
+      customerId,
+      serviceType: serviceType || "standard",
+      status: "pending",
+      originAddress, originCity, originState, originZip,
+      destinationAddress, destinationCity, destinationState, destinationZip,
+      weightKg: String(weightKg),
+      dimensions, description,
+      senderName, senderPhone,
+      recipientName, recipientPhone,
+      recipientEmail: recipientEmail || null,
+      receiverPays: !!receiverPays,
+    }).returning();
+
+    await db.insert(trackingEventsTable).values({
+      shipmentId: shipment.id,
+      status: "pending",
+      description: "Shipment booked and awaiting processing",
+      location: originCity,
+    });
+
+    await createNotification(customerId, "Shipment Booked", `Your shipment ${trackingNumber} has been booked successfully.`, "shipment_update", shipment.id);
+
+    res.status(201).json(serializeShipment(shipment));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /api/shipments/:id
+router.get("/shipments/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [shipment] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, id)).limit(1);
+    if (!shipment) { res.status(404).json({ error: "Shipment not found" }); return; }
+    if (req.user!.role === "customer" && shipment.customerId !== req.user!.id) { res.status(403).json({ error: "Forbidden" }); return; }
+    if (req.user!.role === "driver" && shipment.driverId !== req.user!.id) { res.status(403).json({ error: "Forbidden" }); return; }
+
+    const [events, payment] = await Promise.all([
+      db.select().from(trackingEventsTable).where(eq(trackingEventsTable.shipmentId, id)).orderBy(trackingEventsTable.createdAt),
+      db.select().from(paymentsTable).where(eq(paymentsTable.shipmentId, id)).limit(1),
+    ]);
+
+    res.json({ ...serializeShipment(shipment), events, payment: payment[0] ?? null });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PATCH /api/shipments/:id
+router.patch("/shipments/:id", requireRole("admin", "driver"), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status, driverId, estimatedDelivery, totalAmount } = req.body;
+    const [existing] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, id)).limit(1);
+    if (!existing) { res.status(404).json({ error: "Shipment not found" }); return; }
+    if (req.user!.role === "driver" && existing.driverId !== req.user!.id) { res.status(403).json({ error: "Forbidden" }); return; }
+
+    const updates: Partial<typeof shipmentsTable.$inferInsert> = { updatedAt: new Date() };
+    if (status) updates.status = status;
+    if (driverId !== undefined) updates.driverId = driverId;
+    if (estimatedDelivery) updates.estimatedDelivery = estimatedDelivery;
+    if (totalAmount !== undefined) updates.totalAmount = String(totalAmount);
+
+    const [updated] = await db.update(shipmentsTable).set(updates).where(eq(shipmentsTable.id, id)).returning();
+    if (status && status !== existing.status) {
+      await createNotification(existing.customerId, "Shipment Status Updated", `Your shipment ${existing.trackingNumber} status changed to ${status.replace(/_/g, " ")}.`, "shipment_update", id);
+    }
+    res.json(serializeShipment(updated));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /api/shipments/:id
+router.delete("/shipments/:id", requireRole("admin"), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [deleted] = await db.delete(shipmentsTable).where(eq(shipmentsTable.id, id)).returning({ id: shipmentsTable.id });
+    if (!deleted) { res.status(404).json({ error: "Shipment not found" }); return; }
+    res.json({ message: "Shipment deleted" });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/shipments/:id/assign
+router.post("/shipments/:id/assign", requireRole("admin"), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { driverId } = req.body;
+    if (!driverId) { res.status(400).json({ error: "driverId is required" }); return; }
+    const [updated] = await db.update(shipmentsTable).set({ driverId, status: "confirmed", updatedAt: new Date() }).where(eq(shipmentsTable.id, id)).returning();
+    if (!updated) { res.status(404).json({ error: "Shipment not found" }); return; }
+    await createNotification(updated.customerId, "Driver Assigned", `A driver has been assigned to your shipment ${updated.trackingNumber}.`, "driver_assignment", id);
+    res.json(serializeShipment(updated));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /api/shipments/:id/events
+router.get("/shipments/:id/events", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const events = await db.select().from(trackingEventsTable).where(eq(trackingEventsTable.shipmentId, id)).orderBy(trackingEventsTable.createdAt);
+    res.json(events);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/shipments/:id/events
+router.post("/shipments/:id/events", requireRole("admin", "driver"), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status, location, description } = req.body;
+    if (!status || !description) { res.status(400).json({ error: "status and description are required" }); return; }
+    const [event] = await db.insert(trackingEventsTable).values({ shipmentId: id, status, location, description }).returning();
+    const [shipment] = await db.update(shipmentsTable).set({ status, updatedAt: new Date() }).where(eq(shipmentsTable.id, id)).returning();
+    if (shipment) await createNotification(shipment.customerId, "Shipment Update", description, "shipment_update", id);
+    res.status(201).json(event);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/shipments/:id/proof
+router.post("/shipments/:id/proof", requireRole("driver", "admin"), upload.single("file"), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
+    const proofUrl = `/api/uploads/${req.file.filename}`;
+    const [updated] = await db.update(shipmentsTable).set({ deliveryProofUrl: proofUrl, status: "delivered", updatedAt: new Date() }).where(eq(shipmentsTable.id, id)).returning();
+    if (!updated) { res.status(404).json({ error: "Shipment not found" }); return; }
+    await db.insert(trackingEventsTable).values({ shipmentId: id, status: "delivered", description: "Package delivered. Proof of delivery uploaded.", location: req.body.notes || undefined });
+    await createNotification(updated.customerId, "Shipment Delivered", `Your shipment ${updated.trackingNumber} has been delivered.`, "shipment_update", id);
+    res.json(serializeShipment(updated));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+export default router;

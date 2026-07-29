@@ -3,20 +3,38 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Flexi Route Logistics API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: shipments
+    description: Shipment management
+  - name: payments
+    description: Payment management
+  - name: drivers
+    description: Driver management
+  - name: notifications
+    description: Notifications
+  - name: admin
+    description: Admin operations
+  - name: tracking
+    description: Public shipment tracking
+  - name: pricing
+    description: Pricing management
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +42,895 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # --- AUTH ---
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegistration"
+      responses:
+        "201":
+          description: Registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLogin"
+      responses:
+        "200":
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me/password:
+    patch:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change current user password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChange"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # --- USERS ---
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [customer, driver, admin]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete user (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  # --- SHIPMENTS ---
+  /shipments:
+    get:
+      operationId: listShipments
+      tags: [shipments]
+      summary: List shipments (filtered by role)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, processing, in_transit, out_for_delivery, delivered, cancelled]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: driverId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of shipments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShipmentListResponse"
+
+    post:
+      operationId: createShipment
+      tags: [shipments]
+      summary: Book a shipment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShipmentInput"
+      responses:
+        "201":
+          description: Shipment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /shipments/{id}:
+    get:
+      operationId: getShipment
+      tags: [shipments]
+      summary: Get shipment by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Shipment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShipmentDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateShipment
+      tags: [shipments]
+      summary: Update shipment (admin/driver)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShipmentUpdate"
+      responses:
+        "200":
+          description: Updated shipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+
+    delete:
+      operationId: deleteShipment
+      tags: [shipments]
+      summary: Delete shipment (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /shipments/{id}/assign:
+    post:
+      operationId: assignDriver
+      tags: [shipments]
+      summary: Assign a driver to shipment (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverAssignment"
+      responses:
+        "200":
+          description: Driver assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+
+  /shipments/{id}/events:
+    get:
+      operationId: getShipmentEvents
+      tags: [shipments]
+      summary: Get tracking events for shipment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tracking events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrackingEvent"
+
+    post:
+      operationId: addTrackingEvent
+      tags: [shipments]
+      summary: Add tracking event (admin/driver)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrackingEventInput"
+      responses:
+        "201":
+          description: Event added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackingEvent"
+
+  /shipments/{id}/proof:
+    post:
+      operationId: uploadDeliveryProof
+      tags: [shipments]
+      summary: Upload proof of delivery (driver)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ProofUpload"
+      responses:
+        "200":
+          description: Proof uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+
+  # --- PUBLIC TRACKING ---
+  /track/{trackingNumber}:
+    get:
+      operationId: trackShipment
+      tags: [tracking]
+      summary: Public shipment tracking by tracking number
+      parameters:
+        - name: trackingNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Shipment tracking info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicTrackingInfo"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # --- PAYMENTS ---
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List payments (filtered by role)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [awaiting_payment, under_review, confirmed, rejected]
+        - name: shipmentId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentListResponse"
+
+    post:
+      operationId: createPayment
+      tags: [payments]
+      summary: Create a payment record for a shipment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "201":
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/{id}:
+    get:
+      operationId: getPayment
+      tags: [payments]
+      summary: Get payment by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+    patch:
+      operationId: updatePayment
+      tags: [payments]
+      summary: Update payment (submit TXID or admin review)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentUpdate"
+      responses:
+        "200":
+          description: Updated payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/{id}/proof:
+    post:
+      operationId: uploadPaymentProof
+      tags: [payments]
+      summary: Upload payment screenshot proof
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ProofUpload"
+      responses:
+        "200":
+          description: Proof uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  # --- WALLETS ---
+  /wallets:
+    get:
+      operationId: getWallets
+      tags: [payments]
+      summary: Get crypto wallet addresses
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Wallet addresses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletAddresses"
+
+  # --- DRIVERS ---
+  /drivers:
+    get:
+      operationId: listDrivers
+      tags: [drivers]
+      summary: List all drivers (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: isAvailable
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of drivers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Driver"
+
+    post:
+      operationId: createDriver
+      tags: [drivers]
+      summary: Create driver account (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverInput"
+      responses:
+        "201":
+          description: Driver created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /drivers/{id}:
+    get:
+      operationId: getDriver
+      tags: [drivers]
+      summary: Get driver by ID (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Driver details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+    patch:
+      operationId: updateDriver
+      tags: [drivers]
+      summary: Update driver (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverUpdate"
+      responses:
+        "200":
+          description: Updated driver
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+    delete:
+      operationId: deleteDriver
+      tags: [drivers]
+      summary: Delete driver (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  # --- DRIVER SELF-SERVICE ---
+  /driver/deliveries:
+    get:
+      operationId: getMyDeliveries
+      tags: [drivers]
+      summary: Get driver's assigned deliveries
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Assigned deliveries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shipment"
+
+  # --- NOTIFICATIONS ---
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Get notifications for current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: isRead
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: All marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  # --- ADMIN ANALYTICS ---
+  /admin/analytics:
+    get:
+      operationId: getAdminAnalytics
+      tags: [admin]
+      summary: Get admin dashboard analytics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAnalytics"
+
+  # --- PRICING ---
+  /pricing:
+    get:
+      operationId: listPricing
+      tags: [pricing]
+      summary: Get all pricing configurations
+      responses:
+        "200":
+          description: Pricing list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pricing"
+
+  /pricing/{id}:
+    patch:
+      operationId: updatePricing
+      tags: [pricing]
+      summary: Update pricing (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PricingUpdate"
+      responses:
+        "200":
+          description: Updated pricing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pricing"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +940,591 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    # --- AUTH SCHEMAS ---
+    UserRegistration:
+      type: object
+      required: [name, email, password, phone]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        phone:
+          type: string
+
+    UserLogin:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    PasswordChange:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+
+    # --- USER SCHEMAS ---
+    User:
+      type: object
+      required: [id, name, email, role, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [customer, driver, admin]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        isActive:
+          type: boolean
+        role:
+          type: string
+          enum: [customer, driver, admin]
+
+    UserListResponse:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    # --- SHIPMENT SCHEMAS ---
+    Shipment:
+      type: object
+      required: [id, trackingNumber, status, serviceType, originAddress, destinationAddress, createdAt]
+      properties:
+        id:
+          type: integer
+        trackingNumber:
+          type: string
+        customerId:
+          type: integer
+        driverId:
+          type: ["integer", "null"]
+        customerName:
+          type: ["string", "null"]
+        driverName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, confirmed, processing, in_transit, out_for_delivery, delivered, cancelled]
+        serviceType:
+          type: string
+          enum: [standard, express, overnight, freight]
+        originAddress:
+          type: string
+        originCity:
+          type: string
+        originState:
+          type: string
+        originZip:
+          type: string
+        destinationAddress:
+          type: string
+        destinationCity:
+          type: string
+        destinationState:
+          type: string
+        destinationZip:
+          type: string
+        weightKg:
+          type: number
+        dimensions:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        estimatedDelivery:
+          type: ["string", "null"]
+          format: date
+        deliveryProofUrl:
+          type: ["string", "null"]
+        totalAmount:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ShipmentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Shipment"
+        - type: object
+          properties:
+            events:
+              type: array
+              items:
+                $ref: "#/components/schemas/TrackingEvent"
+            payment:
+              $ref: "#/components/schemas/Payment"
+
+    ShipmentInput:
+      type: object
+      required: [serviceType, originAddress, originCity, originState, originZip, destinationAddress, destinationCity, destinationState, destinationZip, weightKg]
+      properties:
+        serviceType:
+          type: string
+          enum: [standard, express, overnight, freight]
+        originAddress:
+          type: string
+        originCity:
+          type: string
+        originState:
+          type: string
+        originZip:
+          type: string
+        destinationAddress:
+          type: string
+        destinationCity:
+          type: string
+        destinationState:
+          type: string
+        destinationZip:
+          type: string
+        weightKg:
+          type: number
+        dimensions:
+          type: string
+        description:
+          type: string
+        senderName:
+          type: string
+        senderPhone:
+          type: string
+        recipientName:
+          type: string
+        recipientPhone:
+          type: string
+
+    ShipmentUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, processing, in_transit, out_for_delivery, delivered, cancelled]
+        driverId:
+          type: ["integer", "null"]
+        estimatedDelivery:
+          type: string
+          format: date
+        totalAmount:
+          type: number
+
+    ShipmentListResponse:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Shipment"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    DriverAssignment:
+      type: object
+      required: [driverId]
+      properties:
+        driverId:
+          type: integer
+
+    ProofUpload:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+        notes:
+          type: string
+
+    # --- TRACKING SCHEMAS ---
+    TrackingEvent:
+      type: object
+      required: [id, shipmentId, status, description, createdAt]
+      properties:
+        id:
+          type: integer
+        shipmentId:
+          type: integer
+        status:
+          type: string
+        location:
+          type: ["string", "null"]
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    TrackingEventInput:
+      type: object
+      required: [status, description]
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, processing, in_transit, out_for_delivery, delivered, cancelled]
+        location:
+          type: string
+        description:
+          type: string
+
+    PublicTrackingInfo:
+      type: object
+      required: [trackingNumber, status, originCity, destinationCity, events]
+      properties:
+        trackingNumber:
+          type: string
+        status:
+          type: string
+        serviceType:
+          type: string
+        originCity:
+          type: string
+        originState:
+          type: string
+        destinationCity:
+          type: string
+        destinationState:
+          type: string
+        estimatedDelivery:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackingEvent"
+
+    # --- PAYMENT SCHEMAS ---
+    Payment:
+      type: object
+      required: [id, shipmentId, amount, currency, walletAddress, status, createdAt]
+      properties:
+        id:
+          type: integer
+        shipmentId:
+          type: integer
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [BTC, ETH, USDT_TRC20, USDT_ERC20, USDC, LTC]
+        walletAddress:
+          type: string
+        txid:
+          type: ["string", "null"]
+        paymentProofUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [awaiting_payment, under_review, confirmed, rejected]
+        adminNotes:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaymentInput:
+      type: object
+      required: [shipmentId, amount, currency]
+      properties:
+        shipmentId:
+          type: integer
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [BTC, ETH, USDT_TRC20, USDT_ERC20, USDC, LTC]
+
+    PaymentUpdate:
+      type: object
+      properties:
+        txid:
+          type: string
+        status:
+          type: string
+          enum: [under_review, confirmed, rejected]
+        adminNotes:
+          type: string
+
+    PaymentListResponse:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    WalletAddresses:
+      type: object
+      required: [BTC, ETH, USDT_TRC20, USDT_ERC20, USDC, LTC]
+      properties:
+        BTC:
+          type: string
+        ETH:
+          type: string
+        USDT_TRC20:
+          type: string
+        USDT_ERC20:
+          type: string
+        USDC:
+          type: string
+        LTC:
+          type: string
+
+    # --- DRIVER SCHEMAS ---
+    Driver:
+      type: object
+      required: [id, userId, isAvailable, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        vehicleType:
+          type: ["string", "null"]
+        licenseNumber:
+          type: ["string", "null"]
+        isAvailable:
+          type: boolean
+        totalDeliveries:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    DriverInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        phone:
+          type: string
+        vehicleType:
+          type: string
+        licenseNumber:
+          type: string
+
+    DriverUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        vehicleType:
+          type: string
+        licenseNumber:
+          type: string
+        isAvailable:
+          type: boolean
+
+    # --- NOTIFICATION SCHEMAS ---
+    Notification:
+      type: object
+      required: [id, userId, title, message, isRead, type, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+        type:
+          type: string
+          enum: [shipment_update, payment_update, system, driver_assignment]
+        relatedId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    # --- ADMIN ANALYTICS ---
+    AdminAnalytics:
+      type: object
+      required: [totalShipments, totalCustomers, totalDrivers, totalRevenue, shipmentsByStatus, recentShipments, paymentStats]
+      properties:
+        totalShipments:
+          type: integer
+        totalCustomers:
+          type: integer
+        totalDrivers:
+          type: integer
+        totalRevenue:
+          type: number
+        pendingPayments:
+          type: integer
+        shipmentsThisMonth:
+          type: integer
+        shipmentsByStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusCount"
+        recentShipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Shipment"
+        paymentStats:
+          $ref: "#/components/schemas/PaymentStats"
+
+    StatusCount:
+      type: object
+      required: [status, count]
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+
+    PaymentStats:
+      type: object
+      required: [awaitingPayment, underReview, confirmed, rejected]
+      properties:
+        awaitingPayment:
+          type: integer
+        underReview:
+          type: integer
+        confirmed:
+          type: integer
+        rejected:
+          type: integer
+
+    # --- PRICING SCHEMAS ---
+    Pricing:
+      type: object
+      required: [id, serviceType, basePriceUsd, pricePerKg, createdAt]
+      properties:
+        id:
+          type: integer
+        serviceType:
+          type: string
+          enum: [standard, express, overnight, freight]
+        serviceLabel:
+          type: string
+        basePriceUsd:
+          type: number
+        pricePerKg:
+          type: number
+        estimatedDays:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PricingUpdate:
+      type: object
+      properties:
+        basePriceUsd:
+          type: number
+        pricePerKg:
+          type: number
+        estimatedDays:
+          type: string
+        description:
+          type: string
