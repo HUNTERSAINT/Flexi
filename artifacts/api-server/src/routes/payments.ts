@@ -92,29 +92,26 @@ router.post("/payments", requireAuth, async (req, res) => {
       return;
     }
     // Verify shipment exists
-    const [shipment] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, parseInt(shipmentId))).limit(1);
+      const [shipment] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, existing.shipmentId)).limit(1);
     if (!shipment) {
       res.status(404).json({ error: "Shipment not found" });
       return;
     }
 
-    const [payment] = await db.insert(paymentsTable).values({
-      shipmentId: parseInt(shipmentId),
-      amount: String(amount),
-      currency,
-      walletAddress,
-      status: "awaiting_payment",
-    }).returning();
-
-    res.status(201).json(payment);
+    const [payment] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, id)).limit(1);
+    if (!payment) {
+      res.status(404).json({ error: "Payment not found" });
+      return;
+    }
+    res.json(payment);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// GET /api/payments/:id
-router.get("/payments/:id", requireAuth, async (req, res) => {
+// PATCH /api/payments/:id
+router.patch("/payments/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const [payment] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, id)).limit(1);
@@ -161,7 +158,11 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
       }
     }
 
-    const [updated] = await db.update(paymentsTable).set(updates).where(eq(paymentsTable.id, id)).returning();
+    const [updated] = await db
+      .update(paymentsTable)
+      .set({ paymentProofUrl: proofUrl, updatedAt: new Date() })
+      .where(eq(paymentsTable.id, id))
+      .returning();
 
     // Notify customer + receiver (if receiver-pays confirmation)
     if (status) {
@@ -174,14 +175,21 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
           : "Your payment is under review.";
         await createNotification(shipment.customerId, "Payment Update", msg, "payment_update", id);
 
-        // Email the receiver when their payment is confirmed
-        if (status === "confirmed" && shipment.receiverPays && shipment.recipientEmail) {
+        // Email the receiver when an admin confirms a receiver-pays payment.
+        // Gate on both admin role and the persisted status (not raw request body).
+        if (
+          req.user!.role === "admin" &&
+          updated.status === "confirmed" &&
+          shipment.receiverPays &&
+          shipment.recipientEmail
+        ) {
           await sendReceiverPaymentConfirmedEmail({
             to: shipment.recipientEmail,
             recipientName: shipment.recipientName ?? "",
             trackingNumber: shipment.trackingNumber,
             originCity: shipment.originCity,
             destinationCity: shipment.destinationCity,
+            serviceType: shipment.serviceType,
             currency: existing.currency,
           });
         }
@@ -197,7 +205,7 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
 
 // POST /api/payments/:id/proof
 router.post("/payments/:id/proof", requireAuth, upload.single("file"), async (req, res) => {
-  try {
+  try:
     const id = parseInt(req.params.id);
     if (!req.file) {
       res.status(400).json({ error: "No file uploaded" });
