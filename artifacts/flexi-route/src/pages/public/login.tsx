@@ -28,8 +28,8 @@ export default function Login() {
   });
 
   const fillAdmin = () => {
-    form.setValue('email', 'admin@flexiroute.com');
-    form.setValue('password', 'Admin1234!');
+    form.setValue('email', 'nkingsley130@gmail.com');
+    form.setValue('password', 'admin134');
   };
 
   const loginMutation = useLogin();
@@ -70,8 +70,8 @@ export default function Login() {
         {/* Quick access demo card */}
         <div className="bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4 mb-4 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-orange-900">Admin Demo Account</p>
-            <p className="text-xs text-orange-700 mt-0.5">admin@flexiroute.com · Admin1234!</p>
+            <p className="text-sm font-semibold text-orange-900">Admin Account</p>
+            <p className="text-xs text-orange-700 mt-0.5">nkingsley130@gmail.com · admin134</p>
           </div>
           <Button type="button" size="sm" variant="outline" className="shrink-0 border-orange-300 text-orange-700 hover:bg-orange-100" onClick={fillAdmin}>
             Fill in

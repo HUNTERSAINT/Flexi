@@ -14,7 +14,8 @@ import {
   Users,
   Truck,
   DollarSign,
-  Settings
+  Settings,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useListNotifications } from '@workspace/api-client-react';
@@ -34,6 +35,7 @@ const ADMIN_NAV = [
   { href: '/admin/drivers', label: 'Drivers', icon: Truck },
   { href: '/admin/payments', label: 'Payments', icon: DollarSign },
   { href: '/admin/pricing', label: 'Pricing', icon: Settings },
+  { href: '/admin/admins', label: 'Admins', icon: Shield },
   { href: '/admin/notifications', label: 'Notifications', icon: Bell },
 ];
 
