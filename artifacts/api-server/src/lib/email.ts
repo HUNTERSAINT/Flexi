@@ -251,6 +251,39 @@ export async function sendDriverAssignedEmail(opts: {
   await send(to, `Driver Assigned — ${trackingNumber}`, html, text);
 }
 
+// ── Receiver payment confirmed ────────────────────────────────────────────
+export async function sendReceiverPaymentConfirmedEmail(opts: {
+  to: string;
+  recipientName: string;
+  trackingNumber: string;
+  originCity: string;
+  destinationCity: string;
+  currency: string;
+}): Promise<void> {
+  const { to, recipientName, trackingNumber, originCity, destinationCity, currency } = opts;
+  const trackUrl = `${APP_URL}/track?number=${trackingNumber}`;
+  const html = wrap(
+    `Payment Confirmed — ${trackingNumber}`,
+    `Your payment for shipment ${trackingNumber} has been confirmed. It is now on its way!`,
+    `
+    <h2 style="margin:0 0 8px;font-size:24px;color:#0f1f3d;">✅ Payment Confirmed!</h2>
+    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
+      Hi ${recipientName || "there"}, your ${currency.replace(/_/g, " ")} payment has been verified and accepted. Your shipment is now being processed and will be on its way shortly.
+    </p>
+    <table cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background:#f8fafc;border-radius:8px;padding:16px;border:1px solid #e2e8f0;">
+      <tbody>
+        ${infoRow("Tracking Number", trackingNumber)}
+        ${infoRow("From", originCity)}
+        ${infoRow("To", destinationCity)}
+        ${infoRow("Payment", `${currency.replace(/_/g, " ")} — Confirmed`)}
+      </tbody>
+    </table>
+    ${btn("Track Your Shipment", trackUrl)}
+  `);
+  const text = `Hi ${recipientName || "there"},\n\nYour ${currency.replace(/_/g, " ")} payment for shipment ${trackingNumber} has been confirmed!\n\nFrom: ${originCity}\nTo: ${destinationCity}\n\nYour shipment is now being processed. Track it here: ${trackUrl}\n\n© ${new Date().getFullYear()} Flexi Route`;
+  await send(to, `Payment Confirmed — ${trackingNumber}`, html, text);
+}
+
 // ── Delivery confirmation ──────────────────────────────────────────────────
 export async function sendDeliveryConfirmationEmail(opts: {
   to: string;

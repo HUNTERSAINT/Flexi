@@ -24,3 +24,9 @@ id = "7C4ooWxzflnyDnCFaz_wV"
 uri = "file://flexi-route-source.zip"
 type = "unspecified"
 title = "Flexi Route Source Code"
+
+[[outputs]]
+id = "7TzE031mBnMgJJ7_ajV0T"
+uri = "file://task8-updated-files.zip"
+type = "unspecified"
+title = "Task #8 — Updated Files (email.ts + payments.ts)"

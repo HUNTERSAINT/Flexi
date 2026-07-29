@@ -7,6 +7,7 @@ import { eq, and, count, desc, SQL } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { getWalletAddresses } from "../lib/wallets";
 import { createNotification } from "../lib/notifications";
+import { sendReceiverPaymentConfirmedEmail } from "../lib/email";
 
 const router = Router();
 
@@ -162,7 +163,7 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
 
     const [updated] = await db.update(paymentsTable).set(updates).where(eq(paymentsTable.id, id)).returning();
 
-    // Notify customer
+    // Notify customer + receiver (if receiver-pays confirmation)
     if (status) {
       const [shipment] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, existing.shipmentId)).limit(1);
       if (shipment) {
@@ -172,6 +173,18 @@ router.patch("/payments/:id", requireAuth, async (req, res) => {
           ? `Your payment was rejected. ${adminNotes || "Please contact support."}`
           : "Your payment is under review.";
         await createNotification(shipment.customerId, "Payment Update", msg, "payment_update", id);
+
+        // Email the receiver when their payment is confirmed
+        if (status === "confirmed" && shipment.receiverPays && shipment.recipientEmail) {
+          await sendReceiverPaymentConfirmedEmail({
+            to: shipment.recipientEmail,
+            recipientName: shipment.recipientName ?? "",
+            trackingNumber: shipment.trackingNumber,
+            originCity: shipment.originCity,
+            destinationCity: shipment.destinationCity,
+            currency: existing.currency,
+          });
+        }
       }
     }
 
