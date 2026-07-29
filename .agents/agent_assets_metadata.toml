@@ -12,3 +12,9 @@ id = "zibnX2JC0jaew6Gek3nL_"
 uri = "file://flexi_v2.zip"
 type = "unspecified"
 title = "flexi v2.zip"
+
+[[outputs]]
+id = "x5vxSKjEruWzrh5p8KmDe"
+uri = "file://flexi-v2.zip"
+type = "unspecified"
+title = "Flexi Route v2"
