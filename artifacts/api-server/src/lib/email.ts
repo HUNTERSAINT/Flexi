@@ -1,7 +1,4 @@
-import { ReplitConnectors } from "@replit/connectors-sdk";
-
-const connectors = new ReplitConnectors();
-
+const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 const FROM = process.env.EMAIL_FROM ?? "Flexi Route <support@flexirouteglobal.com>";
 const REPLY_TO = process.env.EMAIL_REPLY_TO ?? FROM;
 const APP_URL = process.env.APP_URL ?? "https://flexirouteglobal.com";
@@ -12,9 +9,17 @@ export interface EmailResult {
 }
 
 async function send(to: string, subject: string, html: string, text: string): Promise<EmailResult> {
+  if (!RESEND_API_KEY) {
+    console.warn("[email] RESEND_API_KEY is not set — skipping email send");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
   try {
-    const res = await connectors.proxy("resend", "/emails", {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         from: FROM,
         to,
