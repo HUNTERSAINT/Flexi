@@ -1,156 +1,97 @@
-# Deploying Flexi Route to Railway
+# Flexi Route — Railway Deployment Guide
 
-## Overview
+## Live URLs
 
-You need **three Railway services**:
-1. **PostgreSQL** — managed database (Railway add-on)
-2. **API Server** — the Express backend
-3. **Frontend** — the React/Vite app (static site)
+| Service  | URL |
+|----------|-----|
+| Frontend | https://flexirouteglobal.com (also www.) |
+| API      | https://api.flexirouteglobal.com |
+| Frontend (Railway) | https://frontend-production-2fa3.up.railway.app |
+| API (Railway)      | https://api-server-production-2c9f.up.railway.app |
 
----
+## Railway Project
 
-## Step 1: Push to GitHub
+- **Project ID**: `3d50eed0-e0ed-4e8c-bc89-4b352bce0fcb`
+- **Environment ID**: `5295ca21-8245-4517-add7-d5f48de8617c`
+- **Project**: https://railway.app/project/3d50eed0-e0ed-4e8c-bc89-4b352bce0fcb
 
-Railway deploys from GitHub. Push this repo to a GitHub repository first.
+## Services
 
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/flexi-route.git
-git push -u origin main
-```
+| Service   | Service ID |
+|-----------|-----------|
+| Postgres  | `5a149a94-c153-4f7c-aba0-100f719eccf1` |
+| API Server | `f3aa4bc7-2ddc-488c-a1c2-0ff1ceefc153` |
+| Frontend  | `c9b4c104-5ae9-4dae-b332-97e1c9615f86` |
 
----
+## Admin Login
 
-## Step 2: Create a Railway project
+- **Email**: nkingsley130@gmail.com
+- **Password**: admin134
 
-1. Go to [railway.app](https://railway.app) and sign in.
-2. Click **New Project → Deploy from GitHub repo**.
-3. Select your repository.
-
----
-
-## Step 3: Add PostgreSQL
-
-Inside your Railway project:
-1. Click **+ New Service → Database → PostgreSQL**.
-2. Railway creates the database and automatically provides `DATABASE_URL`.
-
----
-
-## Step 4: Deploy the API Server
-
-1. Click **+ New Service → GitHub Repo** (same repo).
-2. In the service settings:
-
-| Setting | Value |
-|---|---|
-| **Root Directory** | `/` |
-| **Build Command** | `pnpm install && pnpm --filter @workspace/api-server run build` |
-| **Start Command** | `node --enable-source-maps artifacts/api-server/dist/index.mjs` |
-
-3. Add these **environment variables**:
-
-| Variable | Value |
-|---|---|
-| `DATABASE_URL` | Click "Add Reference" → select your PostgreSQL service |
-| `SESSION_SECRET` | A long random string (e.g. `openssl rand -hex 32`) |
-| `RESEND_API_KEY` | Your Resend API key from [resend.com](https://resend.com) |
-| `EMAIL_FROM` | `Flexi Route <support@flexirouteglobal.com>` |
-| `APP_URL` | Your frontend Railway URL (set this after Step 5) |
-
-4. Deploy. Wait for the build to finish and note the generated domain (e.g. `https://flexi-route-api.up.railway.app`).
-
-5. After the first deploy, run the DB schema push **once** from Railway's terminal:
-   ```bash
-   cd lib/db && pnpm run push
-   ```
-   Or add it as a one-time deploy command:
-   ```
-   pnpm install && cd lib/db && DATABASE_URL=$DATABASE_URL pnpm run push && cd ../.. && pnpm --filter @workspace/api-server run build
-   ```
-
----
-
-## Step 5: Deploy the Frontend
-
-1. Click **+ New Service → GitHub Repo** (same repo again).
-2. In the service settings:
-
-| Setting | Value |
-|---|---|
-| **Root Directory** | `/` |
-| **Build Command** | `pnpm install && pnpm --filter @workspace/flexi-route run build` |
-| **Start Command** | `npx serve -s artifacts/flexi-route/dist/public -l $PORT` |
-
-3. Add these **environment variables** (set before the build runs):
-
-| Variable | Value |
-|---|---|
-| `VITE_API_URL` | The API service URL from Step 4 (e.g. `https://flexi-route-api.up.railway.app`) |
-| `BASE_PATH` | `/` |
-
-> ⚠️ `VITE_API_URL` is baked into the JS bundle at build time — set it before deploying.
-
-4. Deploy. Note the generated domain (e.g. `https://flexi-route.up.railway.app`).
-
-5. Go back to the **API Server** service and set:
-   ```
-   APP_URL = https://flexi-route.up.railway.app
-   ```
-   Then redeploy the API so email links point to the right URL.
-
----
-
-## Step 6: Custom Domain (optional)
-
-In Railway, go to each service → **Settings → Domains** → **Add Custom Domain**.
-
-- Frontend: `flexirouteglobal.com`
-- API: `api.flexirouteglobal.com`
-
-Point your DNS to Railway's provided CNAME values.
-
----
-
-## Environment Variable Summary
+## Environment Variables
 
 ### API Server
-| Variable | Required | Notes |
-|---|---|---|
-| `DATABASE_URL` | ✅ | Auto-provided by Railway PostgreSQL |
-| `SESSION_SECRET` | ✅ | Random string, keep secret |
-| `RESEND_API_KEY` | ✅ | From resend.com dashboard |
-| `EMAIL_FROM` | ✅ | Must be a verified Resend sender domain |
-| `APP_URL` | ✅ | Frontend URL (for email links) |
-| `EMAIL_REPLY_TO` | Optional | Defaults to `EMAIL_FROM` |
-| `PORT` | Auto | Railway sets this automatically |
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | `postgresql://postgres:FlexiRoute2024Secure!@postgres.railway.internal:5432/railway?sslmode=disable` |
+| `SESSION_SECRET` | (set in Railway dashboard) |
+| `NODE_ENV` | `production` |
+| `APP_URL` | `https://flexirouteglobal.com` |
+| `EMAIL_FROM` | `Flexi Route <support@flexirouteglobal.com>` |
+| `RESEND_API_KEY` | (set in Railway dashboard) |
+| `PNPM_VERSION` | `10.26.1` |
 
 ### Frontend
-| Variable | Required | Notes |
-|---|---|---|
-| `VITE_API_URL` | ✅ | Full URL of the API service |
-| `BASE_PATH` | ✅ | Set to `/` |
-| `PORT` | Auto | Railway sets this automatically |
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | `https://api.flexirouteglobal.com` |
+| `NODE_ENV` | `production` |
+| `PNPM_VERSION` | `10.26.1` |
 
----
+### Postgres
+| Variable | Value |
+|----------|-------|
+| `POSTGRES_DB` | `railway` |
+| `POSTGRES_USER` | `postgres` |
+| `POSTGRES_PASSWORD` | `FlexiRoute2024Secure!` |
+| `PGDATA` | `/var/lib/postgresql/data/pgdata` |
 
-## File Upload Persistence
+## Build Commands
 
-The API server saves uploaded payment proof files to a local `uploads/` folder. This folder is **ephemeral on Railway** — files are lost on each deploy.
+### API Server
+- **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build`
+- **Start**: `cd /app/lib/db && (npx drizzle-kit push --config ./drizzle.config.ts || true) && node --enable-source-maps /app/artifacts/api-server/dist/index.mjs`
+- **Healthcheck**: `/api/healthz`
 
-To fix this before going to production, use an S3-compatible object store (e.g. Cloudflare R2, AWS S3) and upload files there instead of disk. This is a future improvement.
+### Frontend
+- **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/flexi-route run build && npm install -g serve`
+- **Start**: `serve -s /app/artifacts/flexi-route/dist/public -l $PORT`
 
----
+## DNS (Cloudflare — Zone: flexirouteglobal.com)
 
-## Troubleshooting
+| Type  | Name                        | Target |
+|-------|-----------------------------|--------|
+| CNAME | flexirouteglobal.com        | frontend-production-2fa3.up.railway.app |
+| CNAME | www.flexirouteglobal.com    | frontend-production-2fa3.up.railway.app |
+| CNAME | api.flexirouteglobal.com    | api-server-production-2c9f.up.railway.app |
 
-**Build fails with "workspace:* not found"**
-Make sure the build command runs `pnpm install` from the repo root (`/`), not from the service subdirectory.
+All records are **proxied through Cloudflare** (orange cloud). SSL mode: **Full**.
 
-**API returns 500 on first boot**
-The database tables don't exist yet. Run `lib/db pnpm run push` once to create them (see Step 4.5).
+## Redeploying
 
-**Emails not sending**
-Check that `RESEND_API_KEY` is set on the API service and that your `EMAIL_FROM` domain is verified in Resend.
+To redeploy after a code push to GitHub:
 
-**Frontend shows blank page or API errors**
-Verify `VITE_API_URL` was set **before** the frontend build ran. If it wasn't, redeploy the frontend service with the variable set.
+```bash
+# Push code
+git push github main
+
+# Trigger redeployments via Railway API (use RAILWAY secret)
+# The Railway dashboard auto-deploys on git push if connected via GitHub trigger
+```
+
+## Notes
+
+- The `railpack.json` at repo root overrides the default install command to use `--no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only)
+- Schema migrations run automatically at API startup via `drizzle-kit push`
+- Admin user and default wallet addresses are seeded on first startup
+- Postgres data is persisted via Railway volume at `/var/lib/postgresql/data` (PGDATA subdirectory)
