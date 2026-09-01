@@ -154,7 +154,7 @@ export async function sendReceiverPaysNotification(opts: {
   serviceType: string;
 }): Promise<void> {
   const { to, recipientName, senderName, trackingNumber, originCity, destinationCity, serviceType } = opts;
-  const payUrl = `${APP_URL}/track?number=${trackingNumber}`;
+  const payUrl = `${APP_URL}/track?number=${encodeURIComponent(trackingNumber)}`;
   const html = wrap(
     `Action Required: Incoming Shipment from ${senderName}`,
     `${senderName} sent you a package. Complete payment to receive it.`,

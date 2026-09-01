@@ -23,6 +23,24 @@ interface PaymentInfo {
   txid?: string | null;
 }
 
+function getPaymentEndpoint(trackingNumber: string): string {
+  const path = `/api/track/${encodeURIComponent(trackingNumber)}/pay`;
+  const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+  // The frontend and API are separate Railway services in production. Keep
+  // local development same-origin, but send payment requests to the API
+  // service when VITE_API_URL is configured.
+  if (!configuredApiUrl) return path;
+
+  try {
+    return new URL(path, `${configuredApiUrl.replace(/\/+$/, '')}/`).toString();
+  } catch {
+    // Avoid surfacing the browser's vague "string did not match..." URL error.
+    // The relative fallback still works when the services share an origin.
+    return path;
+  }
+}
+
 export default function Track() {
   const search = useSearch();
   const searchParams = new URLSearchParams(search);
@@ -83,13 +101,19 @@ export default function Track() {
     if (!selectedCurrency) { toast.error('Please select a cryptocurrency'); return; }
     setIsPaySubmitting(true);
     try {
-      const res = await fetch(`/api/track/${activeTracking}/pay`, {
+      const res = await fetch(getPaymentEndpoint(activeTracking), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currency: selectedCurrency }),
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
-      const data = await res.json();
+      const raw = await res.text();
+      let data: PaymentInfo & { error?: string };
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(`Payment service returned an invalid response (${res.status}).`);
+      }
+      if (!res.ok) throw new Error(data.error || 'Failed to generate payment address.');
       setPaymentInfo(data);
       setPayStep('address');
     } catch (err: any) {
@@ -103,12 +127,19 @@ export default function Track() {
     if (!txidInput.trim()) { toast.error('Please enter your transaction ID'); return; }
     setIsPaySubmitting(true);
     try {
-      const res = await fetch(`/api/track/${activeTracking}/pay`, {
+      const res = await fetch(getPaymentEndpoint(activeTracking), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ txid: txidInput.trim() }),
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
+      const raw = await res.text();
+      let data: { error?: string };
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(`Payment service returned an invalid response (${res.status}).`);
+      }
+      if (!res.ok) throw new Error(data.error || 'Failed to submit payment.');
       toast.success('Payment submitted! We will confirm it shortly.');
       setPayStep('done');
       refetch();
