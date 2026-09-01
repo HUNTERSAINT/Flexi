@@ -1266,6 +1266,13 @@ components:
           format: date
         totalAmount:
           type: number
+        statusUpdatedAt:
+          type: string
+          format: date-time
+          description: ISO timestamp for when the status update occurred.
+        statusTimezone:
+          type: string
+          description: IANA timezone used to interpret the selected status time.
 
     ShipmentListResponse:
       type: object
