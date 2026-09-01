@@ -18,7 +18,7 @@ router.get("/pricing", async (_req, res) => {
 // PATCH /api/pricing/:id
 router.patch("/pricing/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { basePriceUsd, pricePerKg, estimatedDays, description } = req.body;
     const updates: Partial<typeof pricingTable.$inferInsert> = { updatedAt: new Date() };
     if (basePriceUsd !== undefined) updates.basePriceUsd = String(basePriceUsd);

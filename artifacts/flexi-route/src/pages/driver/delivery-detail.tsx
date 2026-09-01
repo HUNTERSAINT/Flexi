@@ -19,8 +19,8 @@ export default function DeliveryDetail() {
   const [, setLocation] = useLocation();
   const shipmentId = parseInt(id || '0');
 
-  const { data: shipment, isLoading: isShipmentLoading } = useGetShipment(shipmentId, { query: { enabled: !!shipmentId } });
-  const { data: eventsResponse } = useGetShipmentEvents(shipmentId, { query: { enabled: !!shipmentId } });
+  const { data: shipment, isLoading: isShipmentLoading } = useGetShipment(shipmentId, { query: { queryKey: getGetShipmentQueryKey(shipmentId), enabled: !!shipmentId } });
+  const { data: eventsResponse } = useGetShipmentEvents(shipmentId, { query: { queryKey: getGetShipmentEventsQueryKey(shipmentId), enabled: !!shipmentId } });
 
   if (isShipmentLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!shipment) return <div>Delivery not found</div>;
@@ -103,7 +103,7 @@ export default function DeliveryDetail() {
             <CardContent className="p-6">
               <h3 className="font-bold text-secondary mb-6">Route Log</h3>
               <div className="relative pl-6 border-l-2 border-gray-100 space-y-6 ml-2">
-                {eventsResponse?.data.map((event: any, i: number) => (
+                {eventsResponse?.map((event: any, i: number) => (
                   <div key={event.id} className="relative">
                     <div className={`absolute -left-[31px] h-3 w-3 rounded-full border-2 border-white ${i === 0 ? 'bg-primary' : 'bg-gray-300'}`}></div>
                     <div>

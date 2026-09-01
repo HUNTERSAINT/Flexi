@@ -19,7 +19,7 @@ import {
   Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useListNotifications } from '@workspace/api-client-react';
+import { getListNotificationsQueryKey, useListNotifications } from '@workspace/api-client-react';
 
 const CUSTOMER_NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -53,10 +53,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const { data: notifications } = useListNotifications(
     { isRead: false },
-    { query: { enabled: !!user, refetchInterval: 30000 } }
+    { query: { queryKey: getListNotificationsQueryKey({ isRead: false }), enabled: !!user, refetchInterval: 30000 } }
   );
 
-  const unreadCount = notifications?.data?.length || 0;
+  const unreadCount = notifications?.length || 0;
 
   const getNavLinks = () => {
     if (!user) return [];

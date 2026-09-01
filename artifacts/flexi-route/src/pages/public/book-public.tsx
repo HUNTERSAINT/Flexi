@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'wouter';
-import { useListPricing } from '@workspace/api-client-react';
+import { useCreateGuestShipment, useListPricing } from '@workspace/api-client-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const serviceTypes = ['standard', 'express', 'overnight', 'freight'] as const;
 const currencies = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC'] as const;
+const serviceOptions = [
+  { value: 'standard', label: 'Standard', estimatedDays: '5–7 business days' },
+  { value: 'express', label: 'Express', estimatedDays: '2–3 business days' },
+  { value: 'overnight', label: 'Overnight', estimatedDays: 'Next business day' },
+  { value: 'freight', label: 'Freight', estimatedDays: '7–14 business days' },
+] as const;
 
 const bookingSchema = z.object({
   // Sender info (guest)
@@ -58,8 +64,16 @@ export default function BookPublic() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [finalTracking, setFinalTracking] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: pricing } = useListPricing();
+  const createGuestShipment = useCreateGuestShipment();
+  const isSubmitting = createGuestShipment.isPending;
+  const availableServices = pricing?.length
+    ? pricing.map((item) => ({
+        value: item.serviceType,
+        label: item.serviceLabel || item.serviceType,
+        estimatedDays: item.estimatedDays || 'Delivery estimate unavailable',
+      }))
+    : serviceOptions;
 
   const form = useForm<BookingValues>({
     resolver: zodResolver(bookingSchema),
@@ -100,12 +114,9 @@ export default function BookPublic() {
   };
 
   const onSubmit = async (data: BookingValues) => {
-    setIsSubmitting(true);
     try {
-      const response = await fetch('/api/shipments/guest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const result = await createGuestShipment.mutateAsync({
+        data: {
           guestName: data.guestName,
           guestEmail: data.guestEmail,
           guestPhone: data.guestPhone,
@@ -126,15 +137,8 @@ export default function BookPublic() {
           recipientEmail: data.recipientEmail || undefined,
           receiverPays: data.receiverPays,
           currency: data.receiverPays ? undefined : data.currency,
-        }),
+        },
       });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Booking failed');
-      }
-
-      const result = await response.json();
       setFinalTracking(result.trackingNumber);
       // Store token if received so user can continue to payments
       if (result.token) {
@@ -143,9 +147,7 @@ export default function BookPublic() {
       toast.success('Shipment booked successfully!');
       setStep(6);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to book shipment. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      toast.error(err?.data?.error || err?.message || 'Failed to book shipment. Please try again.');
     }
   };
 
@@ -233,9 +235,9 @@ export default function BookPublic() {
                               <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {pricing?.map(p => (
-                                <SelectItem key={p.id} value={p.serviceType}>
-                                  {p.serviceType.charAt(0).toUpperCase() + p.serviceType.slice(1)} — {p.estimatedDays}
+                              {availableServices.map(p => (
+                                <SelectItem key={p.value} value={p.value}>
+                                  {p.label} — {p.estimatedDays}
                                 </SelectItem>
                               ))}
                             </SelectContent>

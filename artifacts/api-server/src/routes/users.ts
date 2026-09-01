@@ -48,7 +48,7 @@ router.get("/users", requireRole("admin"), async (req, res) => {
 // GET /api/users/:id
 router.get("/users/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const [user] = await db.select({
       id: usersTable.id,
       name: usersTable.name,
@@ -72,7 +72,7 @@ router.get("/users/:id", requireRole("admin"), async (req, res) => {
 // PATCH /api/users/:id
 router.patch("/users/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { name, email, phone, isActive, role, password } = req.body;
     const updates: Partial<typeof usersTable.$inferInsert> = {};
     if (name !== undefined) updates.name = name;
@@ -106,7 +106,7 @@ router.patch("/users/:id", requireRole("admin"), async (req, res) => {
 // DELETE /api/users/:id
 router.delete("/users/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const [deleted] = await db.delete(usersTable).where(eq(usersTable.id, id)).returning({ id: usersTable.id });
     if (!deleted) {
       res.status(404).json({ error: "User not found" });

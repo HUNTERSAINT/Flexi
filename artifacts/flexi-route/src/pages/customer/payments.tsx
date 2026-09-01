@@ -69,13 +69,13 @@ export default function Payments() {
                         <p className="text-sm font-medium text-gray-500 mb-1">Send funds to this address:</p>
                         <div className="flex items-center gap-2">
                           <code className="flex-1 block p-3 bg-gray-100 rounded-lg text-sm break-all border border-gray-200">
-                            {wallets[payment.currency as keyof typeof wallets] || 'Address unavailable'}
+                            {wallets.find((wallet) => wallet.currency === payment.currency)?.address || 'Address unavailable'}
                           </code>
                           <Button 
                             variant="outline" 
                             size="icon" 
                             onClick={() => {
-                              const addr = wallets[payment.currency as keyof typeof wallets];
+                              const addr = wallets.find((wallet) => wallet.currency === payment.currency)?.address;
                               if (addr) {
                                 navigator.clipboard.writeText(addr);
                                 toast.success("Address copied to clipboard!");

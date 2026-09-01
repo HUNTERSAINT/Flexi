@@ -21,7 +21,7 @@ router.get("/wallets", async (_req, res) => {
 // PATCH /api/wallets/:id — admin only
 router.patch("/wallets/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { label, network, address, isActive } = req.body;
 
     const updates: Partial<typeof walletsTable.$inferInsert> = {

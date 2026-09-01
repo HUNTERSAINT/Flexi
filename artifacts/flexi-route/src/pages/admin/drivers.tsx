@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useListDrivers, useCreateDriver, useUpdateDriver, useDeleteDriver } from '@workspace/api-client-react';
+import type { Driver } from '@workspace/api-client-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,7 @@ export default function AdminDrivers() {
   });
 
   // API returns Driver[] directly (not {data: Driver[]})
-  const drivers = (driversResponse as any) || [];
+  const drivers = (driversResponse as Driver[]) || [];
   const queryClient = useQueryClient();
   const updateDriver = useUpdateDriver();
   const deleteDriver = useDeleteDriver();

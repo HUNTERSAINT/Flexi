@@ -15,7 +15,7 @@ export default function DriverDashboard() {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  const deliveries = deliveriesResponse?.data || [];
+  const deliveries = deliveriesResponse || [];
   
   const todayDeliveries = deliveries.filter(d => ['processing', 'in_transit', 'out_for_delivery'].includes(d.status));
   const completedToday = deliveries.filter(d => d.status === 'delivered').length; // Simplification

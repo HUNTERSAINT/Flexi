@@ -229,6 +229,37 @@ export interface ShipmentInput {
   recipientPhone?: string;
 }
 
+export type GuestShipmentInputCurrency = typeof GuestShipmentInputCurrency[keyof typeof GuestShipmentInputCurrency];
+
+
+export const GuestShipmentInputCurrency = {
+  BTC: 'BTC',
+  ETH: 'ETH',
+  USDT_TRC20: 'USDT_TRC20',
+  USDT_ERC20: 'USDT_ERC20',
+  USDC: 'USDC',
+  LTC: 'LTC',
+  XRP: 'XRP',
+} as const;
+
+export type GuestShipmentInput = ShipmentInput & {
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  recipientEmail?: string;
+  receiverPays: boolean;
+  currency?: GuestShipmentInputCurrency;
+};
+
+export interface GuestShipmentResponse {
+  trackingNumber: string;
+  shipmentId: number;
+  /** @nullable */
+  paymentId?: number | null;
+  token?: string;
+  receiverPays: boolean;
+}
+
 export type ShipmentUpdateStatus = typeof ShipmentUpdateStatus[keyof typeof ShipmentUpdateStatus];
 
 
@@ -339,16 +370,6 @@ export interface PaymentListResponse {
   limit: number;
 }
 
-export interface WalletAddresses {
-  BTC: string;
-  ETH: string;
-  USDT_TRC20: string;
-  USDT_ERC20: string;
-  USDC: string;
-  LTC: string;
-  XRP: string;
-}
-
 export interface Wallet {
   id: number;
   currency: string;
@@ -357,7 +378,7 @@ export interface Wallet {
   address: string;
   isActive: boolean;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface WalletUpdate {

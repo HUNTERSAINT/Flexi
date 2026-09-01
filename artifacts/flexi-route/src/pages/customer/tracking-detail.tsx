@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useParams } from 'wouter';
-import { useTrackShipment } from '@workspace/api-client-react';
+import { getTrackShipmentQueryKey, useTrackShipment } from '@workspace/api-client-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Package, Truck, CheckCircle2, MapPin, Clock, Loader2, ArrowLeft } from 'lucide-react';
@@ -13,7 +13,7 @@ export default function TrackShipmentDetail() {
 
   const { data: trackingInfo, isLoading, error } = useTrackShipment(
     trackingNumber || '',
-    { query: { enabled: !!trackingNumber } }
+    { query: { queryKey: getTrackShipmentQueryKey(trackingNumber || ''), enabled: !!trackingNumber } }
   );
 
   if (isLoading) {

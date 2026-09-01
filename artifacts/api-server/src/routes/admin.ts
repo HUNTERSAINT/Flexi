@@ -133,7 +133,7 @@ router.post("/admin/admins", requireRole("admin"), async (req, res) => {
 // DELETE /api/admin/admins/:id — remove an admin user
 router.delete("/admin/admins/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     if (id === req.user!.id) {
       res.status(400).json({ error: "You cannot remove your own admin account" });
       return;

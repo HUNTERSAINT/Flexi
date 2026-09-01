@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/lib/auth';
-import { useListShipments } from '@workspace/api-client-react';
+import { getListShipmentsQueryKey, useListShipments } from '@workspace/api-client-react';
 import { StatCard } from '@/components/ui/stat-card';
 import { Package, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ export default function CustomerDashboard() {
   
   const { data: shipmentsData, isLoading } = useListShipments(
     { limit: 5 },
-    { query: { enabled: !!user } }
+    { query: { queryKey: getListShipmentsQueryKey({ limit: 5 }), enabled: !!user } }
   );
 
   const shipments = shipmentsData?.data || [];

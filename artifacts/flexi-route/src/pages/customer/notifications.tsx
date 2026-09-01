@@ -14,7 +14,7 @@ export default function Notifications() {
   const markAllRead = useMarkAllNotificationsRead();
   const markRead = useMarkNotificationRead();
 
-  const notifications = notificationsData?.data || [];
+  const notifications = notificationsData || [];
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleMarkAllRead = async () => {

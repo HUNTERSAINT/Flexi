@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearch } from 'wouter';
-import { useTrackShipment } from '@workspace/api-client-react';
+import { getTrackShipmentQueryKey, useTrackShipment } from '@workspace/api-client-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,7 +40,7 @@ export default function Track() {
 
   const { data: trackingInfo, isLoading, isError, refetch } = useTrackShipment(
     activeTracking,
-    { query: { enabled: !!activeTracking, retry: false } }
+    { query: { queryKey: getTrackShipmentQueryKey(activeTracking), enabled: !!activeTracking, retry: false } }
   );
 
   // Extended info (new fields from updated API)

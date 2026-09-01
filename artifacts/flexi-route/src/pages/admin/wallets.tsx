@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useListWallets, useUpdateWallet, getListWalletsQueryKey } from '@workspace/api-client-react';
+import { getGetWalletsQueryKey, useGetWallets, useUpdateWallet } from '@workspace/api-client-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Loader2, Save, Wallet } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function AdminWallets() {
-  const { data: wallets, isLoading } = useListWallets();
+  const { data: wallets, isLoading } = useGetWallets();
 
   if (isLoading) {
     return (
@@ -58,7 +58,7 @@ function WalletCard({ wallet }: { wallet: any }) {
       {
         onSuccess: () => {
           toast.success(`${wallet.currency} wallet updated`);
-          queryClient.invalidateQueries({ queryKey: getListWalletsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetWalletsQueryKey() });
         },
         onError: () => toast.error('Failed to save wallet'),
       }

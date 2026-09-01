@@ -44,7 +44,7 @@ router.patch("/notifications/read-all", requireAuth, async (req, res) => {
 // PATCH /api/notifications/:id/read
 router.patch("/notifications/:id/read", requireAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const [notification] = await db
       .update(notificationsTable)
       .set({ isRead: true })

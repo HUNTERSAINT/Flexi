@@ -15,7 +15,7 @@ export default function DriverDeliveries() {
             statusFilter === 'completed' ? 'delivered' : undefined
   });
 
-  const deliveries = deliveriesResponse?.data || [];
+  const deliveries = deliveriesResponse || [];
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedAdminUser, seedWallets } from "./lib/seed";
+import { seedAdminUser, seedPricing, seedWallets } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -16,16 +16,23 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
+async function startServer() {
+  // Seed required catalog data before accepting booking requests.
+  await seedAdminUser();
+  await seedWallets();
+  await seedPricing();
 
-  logger.info({ port }, "Server listening");
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
 
-  // Ensure the owner admin account exists (dev + production)
-  seedAdminUser();
-  // Ensure all supported crypto wallets have a DB row
-  seedWallets();
+    logger.info({ port }, "Server listening");
+  });
+}
+
+startServer().catch((err) => {
+  logger.error({ err }, "Unable to start server");
+  process.exit(1);
 });

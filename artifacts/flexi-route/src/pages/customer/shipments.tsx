@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useListShipments } from '@workspace/api-client-react';
+import { getListShipmentsQueryKey, useListShipments } from '@workspace/api-client-react';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -19,7 +19,10 @@ export default function MyShipments() {
       status: statusFilter === 'all' ? undefined : statusFilter as any,
       limit: 50
     },
-    { query: { enabled: !!user, keepPreviousData: true } }
+    { query: { queryKey: getListShipmentsQueryKey({
+      status: statusFilter === 'all' ? undefined : statusFilter as any,
+      limit: 50
+    }), enabled: !!user, placeholderData: (previous) => previous } }
   );
 
   const shipments = shipmentsData?.data || [];

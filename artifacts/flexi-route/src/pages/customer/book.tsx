@@ -13,6 +13,13 @@ import { toast } from 'sonner';
 import { Package, MapPin, Truck, CheckCircle2, ChevronRight, Loader2, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const serviceOptions = [
+  { value: 'standard', label: 'Standard', estimatedDays: '5–7 business days' },
+  { value: 'express', label: 'Express', estimatedDays: '2–3 business days' },
+  { value: 'overnight', label: 'Overnight', estimatedDays: 'Next business day' },
+  { value: 'freight', label: 'Freight', estimatedDays: '7–14 business days' },
+] as const;
+
 const bookingSchema = z.object({
   serviceType: z.nativeEnum(ShipmentInputServiceType),
   weightKg: z.coerce.number().min(0.1, 'Weight must be > 0'),
@@ -47,6 +54,13 @@ export default function BookShipment() {
   const [step, setStep] = useState(1);
   const [finalTracking, setFinalTracking] = useState('');
   const { data: pricing } = useListPricing();
+  const availableServices = pricing?.length
+    ? pricing.map((item) => ({
+        value: item.serviceType,
+        label: item.serviceLabel || item.serviceType,
+        estimatedDays: item.estimatedDays || 'Delivery estimate unavailable',
+      }))
+    : serviceOptions;
 
   const form = useForm<BookingValues>({
     resolver: zodResolver(bookingSchema),
@@ -112,10 +126,10 @@ export default function BookShipment() {
       const shipment = await createShipment.mutateAsync({ data: shipmentPayload });
 
       if (!data.receiverPays) {
-        const selected = pricing?.find(p => p.serviceType === data.serviceType);
-        const amount = selected
-          ? parseFloat((Number(selected.basePriceUsd) + (data.weightKg * Number(selected.pricePerKg))).toFixed(2))
-          : 0;
+        const amount = Number(shipment.totalAmount);
+        if (!Number.isFinite(amount) || amount <= 0) {
+          throw new Error('Shipment pricing is unavailable. Please refresh and try again.');
+        }
         await createPayment.mutateAsync({
           data: { shipmentId: shipment.id, amount, currency: data.currency! }
         });
@@ -172,9 +186,9 @@ export default function BookShipment() {
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger className="h-12"><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
-                              {pricing?.map(p => (
-                                <SelectItem key={p.id} value={p.serviceType}>
-                                  {p.serviceType.charAt(0).toUpperCase() + p.serviceType.slice(1)} — {p.estimatedDays}
+                              {availableServices.map(p => (
+                                <SelectItem key={p.value} value={p.value}>
+                                  {p.label} — {p.estimatedDays}
                                 </SelectItem>
                               ))}
                             </SelectContent>

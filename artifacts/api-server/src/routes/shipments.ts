@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import bcrypt from "bcryptjs";
-import { db, shipmentsTable, trackingEventsTable, paymentsTable, usersTable } from "@workspace/db";
+import { db, pricingTable, shipmentsTable, trackingEventsTable, paymentsTable, usersTable } from "@workspace/db";
 import { eq, and, ilike, or, count, desc, SQL } from "drizzle-orm";
 import { requireAuth, requireRole, signToken } from "../middlewares/auth";
 import { generateTrackingNumber } from "../lib/trackingNumber";
@@ -30,6 +30,8 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const SERVICE_TYPES = ["standard", "express", "overnight", "freight"] as const;
+const PAYMENT_CURRENCIES = ["BTC", "ETH", "USDT_TRC20", "USDT_ERC20", "USDC", "LTC", "XRP"] as const;
 
 function serializeShipment(s: any) {
   return {
@@ -91,8 +93,41 @@ router.post("/shipments/guest", async (req, res) => {
       receiverPays, currency,
     } = req.body;
 
-    if (!guestName || !guestEmail || !originAddress || !destinationAddress || !weightKg) {
-      res.status(400).json({ error: "Missing required fields: guestName, guestEmail, originAddress, destinationAddress, weightKg" });
+    if (!guestName || !guestEmail || !guestPhone || !originAddress || !destinationAddress || !weightKg) {
+      res.status(400).json({ error: "Missing required fields: name, email, phone, origin address, destination address, and weight" });
+      return;
+    }
+    const numericWeight = Number(weightKg);
+    if (!Number.isFinite(numericWeight) || numericWeight <= 0) {
+      res.status(400).json({ error: "Weight must be greater than 0" });
+      return;
+    }
+    if (!SERVICE_TYPES.includes(serviceType as (typeof SERVICE_TYPES)[number])) {
+      res.status(400).json({ error: "Please select a valid service type" });
+      return;
+    }
+    if (typeof receiverPays !== "boolean") {
+      res.status(400).json({ error: "Please choose who will pay for this shipment" });
+      return;
+    }
+    if (!receiverPays && !PAYMENT_CURRENCIES.includes(currency as (typeof PAYMENT_CURRENCIES)[number])) {
+      res.status(400).json({ error: "Please select a valid payment currency" });
+      return;
+    }
+
+    const [pricing] = await db
+      .select({ basePriceUsd: pricingTable.basePriceUsd, pricePerKg: pricingTable.pricePerKg })
+      .from(pricingTable)
+      .where(eq(pricingTable.serviceType, serviceType))
+      .limit(1);
+    if (!pricing) {
+      res.status(503).json({ error: "Service pricing is not configured yet. Please try again shortly." });
+      return;
+    }
+    const totalAmount = (Number(pricing.basePriceUsd) + numericWeight * Number(pricing.pricePerKg)).toFixed(2);
+    const wallets = !receiverPays ? await getWalletAddresses() : null;
+    if (!receiverPays && !wallets?.[currency]) {
+      res.status(503).json({ error: "The selected payment currency is not configured yet. Please choose another currency." });
       return;
     }
 
@@ -121,7 +156,6 @@ router.post("/shipments/guest", async (req, res) => {
     }
 
     const trackingNumber = await generateUniqueTrackingNumber();
-
     const [shipment] = await db.insert(shipmentsTable).values({
       trackingNumber,
       customerId,
@@ -129,7 +163,7 @@ router.post("/shipments/guest", async (req, res) => {
       status: "pending",
       originAddress, originCity, originState, originZip,
       destinationAddress, destinationCity, destinationState, destinationZip,
-      weightKg: String(weightKg),
+      weightKg: String(numericWeight),
       dimensions, description,
       senderName: guestName,
       senderPhone: guestPhone || null,
@@ -137,6 +171,7 @@ router.post("/shipments/guest", async (req, res) => {
       recipientPhone: recipientPhone || null,
       recipientEmail: recipientEmail || null,
       receiverPays: !!receiverPays,
+      totalAmount,
     }).returning();
 
     // Create initial tracking event
@@ -177,14 +212,11 @@ router.post("/shipments/guest", async (req, res) => {
 
     if (!receiverPays && currency) {
       // Create payment record for sender
-      const wallets = getWalletAddresses();
-      const walletAddress = wallets[currency as keyof typeof wallets];
+      const walletAddress = wallets?.[currency];
       if (walletAddress) {
-        // Rough price calculation (use a default if pricing table isn't seeded)
-        const amount = 0; // will be set properly by pricing
         const [payment] = await db.insert(paymentsTable).values({
           shipmentId: shipment.id,
-          amount: String(amount),
+          amount: totalAmount,
           currency,
           walletAddress,
           status: "awaiting_payment",
@@ -310,6 +342,26 @@ router.post("/shipments", requireRole("customer", "admin"), async (req, res) => 
       res.status(400).json({ error: "Missing required fields" });
       return;
     }
+    const numericWeight = Number(weightKg);
+    if (!Number.isFinite(numericWeight) || numericWeight <= 0) {
+      res.status(400).json({ error: "Weight must be greater than 0" });
+      return;
+    }
+    const normalizedServiceType = serviceType || "standard";
+    if (!SERVICE_TYPES.includes(normalizedServiceType as (typeof SERVICE_TYPES)[number])) {
+      res.status(400).json({ error: "Please select a valid service type" });
+      return;
+    }
+    const [pricing] = await db
+      .select({ basePriceUsd: pricingTable.basePriceUsd, pricePerKg: pricingTable.pricePerKg })
+      .from(pricingTable)
+      .where(eq(pricingTable.serviceType, normalizedServiceType))
+      .limit(1);
+    if (!pricing) {
+      res.status(503).json({ error: "Service pricing is not configured yet. Please try again shortly." });
+      return;
+    }
+    const totalAmount = (Number(pricing.basePriceUsd) + numericWeight * Number(pricing.pricePerKg)).toFixed(2);
 
     const trackingNumber = await generateUniqueTrackingNumber();
     const customerId = req.user!.role === "admin" ? (req.body.customerId || req.user!.id) : req.user!.id;
@@ -317,16 +369,17 @@ router.post("/shipments", requireRole("customer", "admin"), async (req, res) => 
     const [shipment] = await db.insert(shipmentsTable).values({
       trackingNumber,
       customerId,
-      serviceType: serviceType || "standard",
+      serviceType: normalizedServiceType,
       status: "pending",
       originAddress, originCity, originState, originZip,
       destinationAddress, destinationCity, destinationState, destinationZip,
-      weightKg: String(weightKg),
+      weightKg: String(numericWeight),
       dimensions, description,
       senderName, senderPhone,
       recipientName, recipientPhone,
       recipientEmail: recipientEmail || null,
       receiverPays: !!receiverPays,
+      totalAmount,
     }).returning();
 
     await db.insert(trackingEventsTable).values({
@@ -372,7 +425,7 @@ router.post("/shipments", requireRole("customer", "admin"), async (req, res) => 
 // GET /api/shipments/:id
 router.get("/shipments/:id", requireAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const [shipment] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, id)).limit(1);
     if (!shipment) { res.status(404).json({ error: "Shipment not found" }); return; }
     if (req.user!.role === "customer" && shipment.customerId !== req.user!.id) { res.status(403).json({ error: "Forbidden" }); return; }
@@ -393,7 +446,7 @@ router.get("/shipments/:id", requireAuth, async (req, res) => {
 // PATCH /api/shipments/:id
 router.patch("/shipments/:id", requireRole("admin", "driver"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { status, driverId, estimatedDelivery, totalAmount } = req.body;
     const [existing] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, id)).limit(1);
     if (!existing) { res.status(404).json({ error: "Shipment not found" }); return; }
@@ -442,7 +495,7 @@ router.patch("/shipments/:id", requireRole("admin", "driver"), async (req, res) 
 // DELETE /api/shipments/:id
 router.delete("/shipments/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const [deleted] = await db.delete(shipmentsTable).where(eq(shipmentsTable.id, id)).returning({ id: shipmentsTable.id });
     if (!deleted) { res.status(404).json({ error: "Shipment not found" }); return; }
     res.json({ message: "Shipment deleted" });
@@ -455,7 +508,7 @@ router.delete("/shipments/:id", requireRole("admin"), async (req, res) => {
 // POST /api/shipments/:id/assign
 router.post("/shipments/:id/assign", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { driverId } = req.body;
     if (!driverId) { res.status(400).json({ error: "driverId is required" }); return; }
     const [updated] = await db.update(shipmentsTable).set({ driverId, status: "confirmed", updatedAt: new Date() }).where(eq(shipmentsTable.id, id)).returning();
@@ -487,7 +540,7 @@ router.post("/shipments/:id/assign", requireRole("admin"), async (req, res) => {
 // GET /api/shipments/:id/events
 router.get("/shipments/:id/events", requireAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const events = await db.select().from(trackingEventsTable).where(eq(trackingEventsTable.shipmentId, id)).orderBy(trackingEventsTable.createdAt);
     res.json(events);
   } catch (err) {
@@ -499,7 +552,7 @@ router.get("/shipments/:id/events", requireAuth, async (req, res) => {
 // POST /api/shipments/:id/events
 router.post("/shipments/:id/events", requireRole("admin", "driver"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { status, location, description } = req.body;
     if (!status || !description) { res.status(400).json({ error: "status and description are required" }); return; }
     const [event] = await db.insert(trackingEventsTable).values({ shipmentId: id, status, location, description }).returning();
@@ -515,7 +568,7 @@ router.post("/shipments/:id/events", requireRole("admin", "driver"), async (req,
 // POST /api/shipments/:id/proof
 router.post("/shipments/:id/proof", requireRole("driver", "admin"), upload.single("file"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
     const proofUrl = `/api/uploads/${req.file.filename}`;
     const [updated] = await db.update(shipmentsTable).set({ deliveryProofUrl: proofUrl, status: "delivered", updatedAt: new Date() }).where(eq(shipmentsTable.id, id)).returning();

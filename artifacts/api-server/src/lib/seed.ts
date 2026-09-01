@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
-import { db, usersTable, walletsTable } from "@workspace/db";
+import { db, pricingTable, usersTable, walletsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { logger } from "./logger";
 
 const ADMIN_EMAIL = "nkingsley130@gmail.com";
 const ADMIN_PASSWORD = "admin134";
@@ -69,5 +70,57 @@ export async function seedWallets(): Promise<void> {
     }
   } catch (err) {
     console.error("[seed] Could not seed wallets:", err);
+  }
+}
+
+const DEFAULT_PRICING = [
+  {
+    serviceType: "standard",
+    serviceLabel: "Standard",
+    basePriceUsd: "15",
+    pricePerKg: "2.5",
+    estimatedDays: "5–7 business days",
+    description: "Reliable delivery for everyday shipments.",
+  },
+  {
+    serviceType: "express",
+    serviceLabel: "Express",
+    basePriceUsd: "30",
+    pricePerKg: "4",
+    estimatedDays: "2–3 business days",
+    description: "Faster delivery when timing matters.",
+  },
+  {
+    serviceType: "overnight",
+    serviceLabel: "Overnight",
+    basePriceUsd: "55",
+    pricePerKg: "6",
+    estimatedDays: "Next business day",
+    description: "Priority overnight delivery for urgent shipments.",
+  },
+  {
+    serviceType: "freight",
+    serviceLabel: "Freight",
+    basePriceUsd: "100",
+    pricePerKg: "1.5",
+    estimatedDays: "7–14 business days",
+    description: "Cost-effective delivery for larger shipments.",
+  },
+] as const;
+
+/**
+ * Ensures each selectable service has a pricing row.
+ * Existing admin-managed values are preserved.
+ */
+export async function seedPricing(): Promise<void> {
+  try {
+    for (const pricing of DEFAULT_PRICING) {
+      await db
+        .insert(pricingTable)
+        .values(pricing)
+        .onConflictDoNothing({ target: pricingTable.serviceType });
+    }
+  } catch (err) {
+    logger.error({ err }, "Could not seed pricing");
   }
 }

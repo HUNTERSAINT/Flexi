@@ -90,7 +90,7 @@ router.post("/drivers", requireRole("admin"), async (req, res) => {
 // GET /api/drivers/:id
 router.get("/drivers/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const [driver] = await db
       .select({
         id: driversTable.id,
@@ -123,7 +123,7 @@ router.get("/drivers/:id", requireRole("admin"), async (req, res) => {
 // PATCH /api/drivers/:id
 router.patch("/drivers/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const { name, phone, vehicleType, licenseNumber, isAvailable } = req.body;
 
     const [existing] = await db.select().from(driversTable).where(eq(driversTable.id, id)).limit(1);
@@ -170,7 +170,7 @@ router.patch("/drivers/:id", requireRole("admin"), async (req, res) => {
 // DELETE /api/drivers/:id
 router.delete("/drivers/:id", requireRole("admin"), async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id), 10);
     const [driver] = await db.select().from(driversTable).where(eq(driversTable.id, id)).limit(1);
     if (!driver) {
       res.status(404).json({ error: "Driver not found" });
