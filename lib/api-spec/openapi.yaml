@@ -1124,6 +1124,10 @@ components:
           type: ["string", "null"]
         driverName:
           type: ["string", "null"]
+        driverEmail:
+          type: ["string", "null"]
+        driverPhone:
+          type: ["string", "null"]
         status:
           type: string
           enum: [pending, confirmed, processing, in_transit, out_for_delivery, delivered, cancelled]
