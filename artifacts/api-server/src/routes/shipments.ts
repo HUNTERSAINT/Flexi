@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import bcrypt from "bcryptjs";
-import { db, pricingTable, shipmentsTable, trackingEventsTable, paymentsTable, usersTable } from "@workspace/db";
+import { db, pricingTable, shipmentsTable, trackingEventsTable, paymentsTable, usersTable, driversTable } from "@workspace/db";
 import { eq, and, ilike, or, count, desc, SQL } from "drizzle-orm";
 import { requireAuth, requireRole, signToken } from "../middlewares/auth";
 import { generateTrackingNumber } from "../lib/trackingNumber";
@@ -14,6 +14,7 @@ import {
   sendReceiverPaysNotification,
   sendStatusUpdateEmail,
   sendDriverAssignedEmail,
+  sendDriverAssignmentEmail,
   sendDeliveryConfirmationEmail,
 } from "../lib/email";
 
@@ -304,19 +305,26 @@ router.get("/shipments", requireAuth, async (req, res) => {
         .offset(offset),
     ]);
 
-    // Attach driver names in a second pass (separate join to avoid cartesian issues)
+    // Attach driver details in a second pass (without exposing contact data to customers/drivers).
     const driverIds = [...new Set(shipments.map(s => s.driverId).filter(Boolean))] as number[];
-    const driverNames: Record<number, string> = {};
+    const driverDetails: Record<number, { name: string; email: string; phone: string | null }> = {};
     if (driverIds.length > 0) {
       const driverUsers = await db
-        .select({ id: usersTable.id, name: usersTable.name })
+        .select({ id: usersTable.id, name: usersTable.name, email: usersTable.email, phone: usersTable.phone })
         .from(usersTable)
         .where(eq(usersTable.role, "driver"));
-      driverUsers.forEach(d => { driverNames[d.id] = d.name; });
+      driverUsers.forEach((driver) => { driverDetails[driver.id] = driver; });
     }
-
     res.json({
-      data: shipments.map(s => serializeShipment({ ...s, driverName: s.driverId ? (driverNames[s.driverId] ?? null) : null })),
+      data: shipments.map(s => {
+        const driver = s.driverId ? driverDetails[s.driverId] : null;
+        return serializeShipment({
+          ...s,
+          driverName: driver?.name ?? null,
+          driverEmail: req.user!.role === "admin" ? (driver?.email ?? null) : null,
+          driverPhone: req.user!.role === "admin" ? (driver?.phone ?? null) : null,
+        });
+      }),
       total: Number(totalResult[0]?.count ?? 0),
       page: pageNum,
       limit: limitNum,
@@ -541,34 +549,55 @@ router.delete("/shipments/:id", requireRole("admin"), async (req, res) => {
 router.post("/shipments/:id/assign", requireRole("admin"), async (req, res) => {
   try {
     const id = parseInt(String(req.params.id), 10);
-    const { driverId } = req.body;
-    if (!driverId) { res.status(400).json({ error: "driverId is required" }); return; }
-    const [updated] = await db.update(shipmentsTable).set({ driverId, status: "confirmed", updatedAt: new Date() }).where(eq(shipmentsTable.id, id)).returning();
+    const parsedDriverId = Number(req.body.driverId);
+    if (!Number.isInteger(parsedDriverId) || parsedDriverId <= 0) { res.status(400).json({ error: "driverId must be a valid driver id" }); return; }
+
+    const [driver] = await db
+      .select({ userId: driversTable.userId, name: usersTable.name, email: usersTable.email, phone: usersTable.phone })
+      .from(driversTable)
+      .innerJoin(usersTable, eq(driversTable.userId, usersTable.id))
+      .where(eq(driversTable.id, parsedDriverId))
+      .limit(1);
+    if (!driver) { res.status(404).json({ error: "Driver not found" }); return; }
+
+    const [updated] = await db
+      .update(shipmentsTable)
+      .set({ driverId: driver.userId, status: "confirmed", updatedAt: new Date() })
+      .where(eq(shipmentsTable.id, id))
+      .returning();
     if (!updated) { res.status(404).json({ error: "Shipment not found" }); return; }
     await createNotification(updated.customerId, "Driver Assigned", `A driver has been assigned to your shipment ${updated.trackingNumber}.`, "driver_assignment", id);
 
-    // Send driver-assigned email
-    const [customer, driver] = await Promise.all([
-      db.select({ email: usersTable.email, name: usersTable.name }).from(usersTable).where(eq(usersTable.id, updated.customerId)).limit(1),
-      driverId ? db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, parseInt(String(driverId)))).limit(1) : Promise.resolve([]),
-    ]);
-    if (customer[0]) {
+    const [customer] = await db
+      .select({ email: usersTable.email, name: usersTable.name })
+      .from(usersTable)
+      .where(eq(usersTable.id, updated.customerId))
+      .limit(1);
+    if (customer) {
       sendDriverAssignedEmail({
-        to: customer[0].email,
-        name: customer[0].name,
+        to: customer.email,
+        name: customer.name,
         trackingNumber: updated.trackingNumber,
-        driverName: driver[0]?.name ?? "your driver",
+        driverName: driver.name,
         originCity: updated.originCity ?? "",
         destinationCity: updated.destinationCity ?? "",
       }).catch(() => {});
     }
-    res.json(serializeShipment(updated));
+    if (driver.email) {
+      sendDriverAssignmentEmail({
+        to: driver.email,
+        name: driver.name,
+        trackingNumber: updated.trackingNumber,
+        originCity: updated.originCity ?? "",
+        destinationCity: updated.destinationCity ?? "",
+      }).catch(() => {});
+    }
+    res.json(serializeShipment({ ...updated, driverName: driver.name, driverEmail: driver.email, driverPhone: driver.phone }));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 // GET /api/shipments/:id/events
 router.get("/shipments/:id/events", requireAuth, async (req, res) => {
   try {
