@@ -160,6 +160,8 @@ export default function AdminShipments() {
                             {shipment.driverPhone && <p className="text-gray-500 truncate">{shipment.driverPhone}</p>}
                           </div>
                         </div>
+                      ) : (
+                        <span className="text-gray-400 italic text-xs">Unassigned</span>
                       )}
                     </td>
                     <td className="px-6 py-4"><StatusBadge status={shipment.status as any} /></td>
