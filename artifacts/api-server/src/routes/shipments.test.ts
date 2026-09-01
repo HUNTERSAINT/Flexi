@@ -8,9 +8,9 @@
  *     triggered when receiverPays=true and recipientEmail is provided.
  *  3. POST /api/shipments (receiver-pays, no email) — sendReceiverPaysNotification
  *     is NOT triggered when recipientEmail is absent.
- *  4. PATCH /api/shipments/:id — sendStatusUpdateEmail is triggered (to both
- *     the sender-customer and the recipient) when the status actually changes,
- *     and NOT triggered when the status is unchanged.
+ *  4. PATCH /api/shipments/:id — creates a tracking event and sends
+ *     sendStatusUpdateEmail (to both the sender-customer and the recipient) when
+ *     the status actually changes, and does neither when the status is unchanged.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -353,6 +353,7 @@ describe("PATCH /api/shipments/:id — status update email", () => {
       .send({ status: "in_transit" });
 
     expect(res.status).toBe(200);
+    expect(vi.mocked(db.insert)).toHaveBeenCalledWith(expect.objectContaining({ shipmentId: "tracking_events.shipmentId" }));
     expect(vi.mocked(sendStatusUpdateEmail)).toHaveBeenCalledWith({
       to: mockCustomer.email,
       name: mockCustomer.name,
