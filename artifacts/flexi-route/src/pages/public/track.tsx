@@ -373,22 +373,22 @@ export default function Track() {
               <h3 className="text-xl font-bold text-secondary mb-8">Tracking History</h3>
               <div className="relative pl-6 border-l-2 border-gray-200 space-y-8 ml-4">
                 {trackingInfo.events.map((event: any, idx: number) => {
-                  const isFirst = idx === 0;
+                  const isLatest = idx === trackingInfo.events.length - 1;
                   let EventIcon = Package;
                   if (event.status === 'delivered') EventIcon = CheckCircle2;
                   else if (event.status === 'in_transit') EventIcon = Truck;
 
                   return (
                     <div key={event.id} className="relative">
-                      <div className={`absolute -left-[35px] h-4 w-4 rounded-full border-4 border-white shadow-sm ${isFirst ? 'bg-primary' : 'bg-gray-300'}`}></div>
-                      <div className={`flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 ${isFirst ? 'opacity-100' : 'opacity-70'}`}>
+                      <div className={`absolute -left-[35px] h-4 w-4 rounded-full border-4 border-white shadow-sm ${isLatest ? 'bg-primary' : 'bg-gray-300'}`}></div>
+                      <div className={`flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 ${isLatest ? 'opacity-100' : 'opacity-70'}`}>
                         <div className="w-40 shrink-0">
                           <p className="font-semibold text-secondary">{format(new Date(event.createdAt), 'MMM d, yyyy')}</p>
                           <p className="text-sm text-gray-500">{format(new Date(event.createdAt), 'h:mm a')}</p>
                         </div>
                         <div className="flex-1 bg-gray-50 rounded-lg p-4">
                           <p className="font-semibold text-secondary flex items-center gap-2">
-                            <EventIcon className={`h-4 w-4 ${isFirst ? 'text-primary' : 'text-gray-500'}`} />
+                            <EventIcon className={`h-4 w-4 ${isLatest ? 'text-primary' : 'text-gray-500'}`} />
                             {event.status.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                           </p>
                           <p className="text-gray-600 text-sm mt-1">{event.description}</p>
