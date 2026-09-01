@@ -91,8 +91,8 @@ git push github main
 
 ## Notes
 
-- The `railpack.json` at repo root overrides the default install command to use `--no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only)
-- The `railway.json` at repo root explicitly selects Railpack and avoids the legacy Nixpacks builder configuration.
+- The service build commands explicitly use `pnpm install --no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only).
+- The `railway.json` at repo root explicitly selects Railpack. Do not add a legacy `nixpacksPlan` or `railpack.json` override.
 - Schema migrations run automatically at API startup via `drizzle-kit push`
 - Admin user and default wallet addresses are seeded on first startup
 - Postgres data is persisted via Railway volume at `/var/lib/postgresql/data` (PGDATA subdirectory)
