@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const port = Number(process.env.PORT ?? 3000);
-const publicDir = fileURLToPath(new URL("./dist/public/", import.meta.url));
+const publicDir = path.resolve(fileURLToPath(new URL("./dist/public/", import.meta.url)));
 const indexFile = path.join(publicDir, "index.html");
 
 const contentTypes = {
