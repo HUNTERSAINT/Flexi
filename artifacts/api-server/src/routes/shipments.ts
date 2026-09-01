@@ -447,10 +447,32 @@ router.get("/shipments/:id", requireAuth, async (req, res) => {
 router.patch("/shipments/:id", requireRole("admin", "driver"), async (req, res) => {
   try {
     const id = parseInt(String(req.params.id), 10);
-    const { status, driverId, estimatedDelivery, totalAmount } = req.body;
+    const { status, driverId, estimatedDelivery, totalAmount, statusUpdatedAt, statusTimezone } = req.body;
     const [existing] = await db.select().from(shipmentsTable).where(eq(shipmentsTable.id, id)).limit(1);
     if (!existing) { res.status(404).json({ error: "Shipment not found" }); return; }
     if (req.user!.role === "driver" && existing.driverId !== req.user!.id) { res.status(403).json({ error: "Forbidden" }); return; }
+    if ((statusUpdatedAt !== undefined || statusTimezone !== undefined) && req.user!.role !== "admin") {
+      res.status(403).json({ error: "Only admins can set a historical status time" });
+      return;
+    }
+
+    let statusEventDate = new Date();
+    if (statusUpdatedAt !== undefined) {
+      const parsedStatusDate = new Date(statusUpdatedAt);
+      if (Number.isNaN(parsedStatusDate.getTime())) {
+        res.status(400).json({ error: "statusUpdatedAt must be a valid ISO date-time" });
+        return;
+      }
+      statusEventDate = parsedStatusDate;
+    }
+    if (statusTimezone !== undefined) {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: statusTimezone }).format(statusEventDate);
+      } catch {
+        res.status(400).json({ error: "statusTimezone must be a valid IANA timezone" });
+        return;
+      }
+    }
 
     const updates: Partial<typeof shipmentsTable.$inferInsert> = { updatedAt: new Date() };
     if (status) updates.status = status;
@@ -463,7 +485,8 @@ router.patch("/shipments/:id", requireRole("admin", "driver"), async (req, res) 
       await db.insert(trackingEventsTable).values({
         shipmentId: id,
         status,
-        description: "Shipment status updated to " + status.replace(/_/g, " ")
+        description: "Shipment status updated to " + status.replace(/_/g, " "),
+        createdAt: statusEventDate,
       });
       await createNotification(existing.customerId, "Shipment Status Updated", `Your shipment ${existing.trackingNumber} status changed to ${status.replace(/_/g, " ")}.`, "shipment_update", id);
       // Send status update email to sender (customer)
