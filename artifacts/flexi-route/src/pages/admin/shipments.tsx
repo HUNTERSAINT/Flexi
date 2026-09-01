@@ -149,11 +149,17 @@ export default function AdminShipments() {
                     </td>
                     <td className="px-6 py-4">
                       {shipment.driverName ? (
-                        <div className="flex items-center gap-1 text-xs bg-gray-100 px-2 py-1 rounded w-fit">
-                          <Truck className="h-3 w-3" /> {shipment.driverName}
+                        <div className="flex items-start gap-2 text-xs">
+                          <Truck className="h-3 w-3 mt-0.5 shrink-0" />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium truncate">{shipment.driverName}</span>
+                              <span className="text-[10px] uppercase tracking-wide text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Assigned</span>
+                            </div>
+                            <p className="text-gray-500 truncate">{shipment.driverEmail || 'No email'}</p>
+                            {shipment.driverPhone && <p className="text-gray-500 truncate">{shipment.driverPhone}</p>}
+                          </div>
                         </div>
-                      ) : (
-                        <span className="text-gray-400 italic text-xs">Unassigned</span>
                       )}
                     </td>
                     <td className="px-6 py-4"><StatusBadge status={shipment.status as any} /></td>
