@@ -25,15 +25,15 @@
 
 ## Admin Login
 
-- **Email**: nkingsley130@gmail.com
-- **Password**: admin134
+Admin credentials are provisioned through Railway environment variables or the
+application's secure setup flow. Never commit login credentials to this file.
 
 ## Environment Variables
 
 ### API Server
 | Variable | Value |
 |----------|-------|
-| `DATABASE_URL` | `postgresql://postgres:FlexiRoute2024Secure!@postgres.railway.internal:5432/railway?sslmode=disable` |
+| `DATABASE_URL` | Set through the Railway Postgres service reference |
 | `SESSION_SECRET` | (set in Railway dashboard) |
 | `NODE_ENV` | `production` |
 | `APP_URL` | `https://flexirouteglobal.com` |
@@ -53,7 +53,7 @@
 |----------|-------|
 | `POSTGRES_DB` | `railway` |
 | `POSTGRES_USER` | `postgres` |
-| `POSTGRES_PASSWORD` | `FlexiRoute2024Secure!` |
+| `POSTGRES_PASSWORD` | Set in Railway; never commit this value |
 | `PGDATA` | `/var/lib/postgresql/data/pgdata` |
 
 ## Build Commands
@@ -92,6 +92,8 @@ git push github main
 ## Notes
 
 - The `railpack.json` at repo root overrides the default install command to use `--no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only)
+- The `railway.json` at repo root explicitly selects Railpack and avoids the legacy Nixpacks builder configuration.
 - Schema migrations run automatically at API startup via `drizzle-kit push`
 - Admin user and default wallet addresses are seeded on first startup
 - Postgres data is persisted via Railway volume at `/var/lib/postgresql/data` (PGDATA subdirectory)
+- Rotate any database or admin credentials that were previously committed to this file before deploying.
