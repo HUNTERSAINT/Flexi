@@ -65,7 +65,7 @@ application's secure setup flow. Never commit login credentials to this file.
 
 ### Frontend
 - **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/flexi-route run build && npm install -g serve`
-- **Start**: `serve -s /app/artifacts/flexi-route/dist/public -l $PORT`
+- **Start**: `node /app/artifacts/flexi-route/server.mjs`
 
 ## DNS (Cloudflare — Zone: flexirouteglobal.com)
 
@@ -93,6 +93,7 @@ git push github main
 
 - The service build commands explicitly use `pnpm install --no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only).
 - The `railway.json` at repo root explicitly selects Railpack. Do not add a legacy `nixpacksPlan` or `railpack.json` override.
+- The frontend is served by the dependency-free Node server in `artifacts/flexi-route/server.mjs`; do not rely on a globally installed build-stage CLI at runtime.
 - Schema migrations run automatically at API startup via `drizzle-kit push`
 - Admin user and default wallet addresses are seeded on first startup
 - Postgres data is persisted via Railway volume at `/var/lib/postgresql/data` (PGDATA subdirectory)
