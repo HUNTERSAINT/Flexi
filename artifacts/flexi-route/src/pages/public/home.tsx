@@ -47,7 +47,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-xl shadow-black/20 flex flex-col sm:flex-row gap-2"
           >
-            <form onSubmit={handleTrack} className="flex-1 flex items-center">
+            <form id="hero-tracking-form" onSubmit={handleTrack} className="flex-1 flex items-center">
               <Search className="h-5 w-5 text-gray-400 ml-4 hidden sm:block" />
               <Input 
                 type="text" 
@@ -59,6 +59,7 @@ export default function Home() {
               />
             </form>
             <Button 
+              form="hero-tracking-form"
               type="submit" 
               className="h-14 px-8 text-lg rounded-xl shrink-0"
               data-testid="button-hero-track"
