@@ -42,6 +42,8 @@ function serializeShipment(s: any) {
     driverId: s.driverId,
     customerName: (s as any).customerName ?? null,
     driverName: (s as any).driverName ?? null,
+    driverEmail: (s as any).driverEmail ?? null,
+    driverPhone: (s as any).driverPhone ?? null,
     serviceType: s.serviceType,
     status: s.status,
     originAddress: s.originAddress,
