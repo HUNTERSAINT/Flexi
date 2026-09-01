@@ -18,6 +18,10 @@ export interface Shipment {
   customerName?: string | null;
   /** @nullable */
   driverName?: string | null;
+  /** @nullable */
+  driverEmail?: string | null;
+  /** @nullable */
+  driverPhone?: string | null;
   status: ShipmentStatus;
   serviceType: ShipmentServiceType;
   originAddress: string;
