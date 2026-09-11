@@ -16,4 +16,5 @@ export const PaymentCurrency = {
   USDT_ERC20: 'USDT_ERC20',
   USDC: 'USDC',
   LTC: 'LTC',
+  XRP: 'XRP',
 } as const;

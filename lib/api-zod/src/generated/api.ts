@@ -5,7 +5,7 @@
  * Flexi Route Logistics API
  * OpenAPI spec version: 0.1.0
  */
-import * as zod from 'zod/v4';
+import * as zod from 'zod';
 
 
 /**
@@ -207,6 +207,8 @@ export const ListShipmentsResponse = zod.object({
   "driverId": zod.int().nullish(),
   "customerName": zod.string().nullish(),
   "driverName": zod.string().nullish(),
+  "driverEmail": zod.string().nullish(),
+  "driverPhone": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
@@ -261,6 +263,8 @@ export const CreateShipmentResponse = zod.object({
   "driverId": zod.int().nullish(),
   "customerName": zod.string().nullish(),
   "driverName": zod.string().nullish(),
+  "driverEmail": zod.string().nullish(),
+  "driverPhone": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
@@ -334,6 +338,8 @@ export const GetShipmentResponse = zod.object({
   "driverId": zod.int().nullish(),
   "customerName": zod.string().nullish(),
   "driverName": zod.string().nullish(),
+  "driverEmail": zod.string().nullish(),
+  "driverPhone": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
@@ -365,7 +371,7 @@ export const GetShipmentResponse = zod.object({
   "id": zod.int(),
   "shipmentId": zod.int(),
   "amount": zod.number(),
-  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC']),
+  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC', 'XRP']),
   "walletAddress": zod.string(),
   "txid": zod.string().nullish(),
   "paymentProofUrl": zod.string().nullish(),
@@ -389,7 +395,9 @@ export const UpdateShipmentBody = zod.object({
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']).optional(),
   "driverId": zod.int().nullish(),
   "estimatedDelivery": zod.coerce.date().optional(),
-  "totalAmount": zod.number().optional()
+  "totalAmount": zod.number().optional(),
+  "statusUpdatedAt": zod.coerce.date().optional().describe('ISO timestamp for when the status update occurred.'),
+  "statusTimezone": zod.string().optional().describe('IANA timezone used to interpret the selected status time.')
 })
 
 export const UpdateShipmentResponse = zod.object({
@@ -399,6 +407,8 @@ export const UpdateShipmentResponse = zod.object({
   "driverId": zod.int().nullish(),
   "customerName": zod.string().nullish(),
   "driverName": zod.string().nullish(),
+  "driverEmail": zod.string().nullish(),
+  "driverPhone": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
@@ -450,6 +460,8 @@ export const AssignDriverResponse = zod.object({
   "driverId": zod.int().nullish(),
   "customerName": zod.string().nullish(),
   "driverName": zod.string().nullish(),
+  "driverEmail": zod.string().nullish(),
+  "driverPhone": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
@@ -531,6 +543,8 @@ export const UploadDeliveryProofResponse = zod.object({
   "driverId": zod.int().nullish(),
   "customerName": zod.string().nullish(),
   "driverName": zod.string().nullish(),
+  "driverEmail": zod.string().nullish(),
+  "driverPhone": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
@@ -598,7 +612,7 @@ export const ListPaymentsResponse = zod.object({
   "id": zod.int(),
   "shipmentId": zod.int(),
   "amount": zod.number(),
-  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC']),
+  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC', 'XRP']),
   "walletAddress": zod.string(),
   "txid": zod.string().nullish(),
   "paymentProofUrl": zod.string().nullish(),
@@ -627,7 +641,7 @@ export const CreatePaymentResponse = zod.object({
   "id": zod.int(),
   "shipmentId": zod.int(),
   "amount": zod.number(),
-  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC']),
+  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC', 'XRP']),
   "walletAddress": zod.string(),
   "txid": zod.string().nullish(),
   "paymentProofUrl": zod.string().nullish(),
@@ -650,7 +664,7 @@ export const GetPaymentResponse = zod.object({
   "id": zod.int(),
   "shipmentId": zod.int(),
   "amount": zod.number(),
-  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC']),
+  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC', 'XRP']),
   "walletAddress": zod.string(),
   "txid": zod.string().nullish(),
   "paymentProofUrl": zod.string().nullish(),
@@ -679,7 +693,7 @@ export const UpdatePaymentResponse = zod.object({
   "id": zod.int(),
   "shipmentId": zod.int(),
   "amount": zod.number(),
-  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC']),
+  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC', 'XRP']),
   "walletAddress": zod.string(),
   "txid": zod.string().nullish(),
   "paymentProofUrl": zod.string().nullish(),
@@ -707,7 +721,7 @@ export const UploadPaymentProofResponse = zod.object({
   "id": zod.int(),
   "shipmentId": zod.int(),
   "amount": zod.number(),
-  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC']),
+  "currency": zod.enum(['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC', 'XRP']),
   "walletAddress": zod.string(),
   "txid": zod.string().nullish(),
   "paymentProofUrl": zod.string().nullish(),
@@ -890,6 +904,8 @@ export const GetMyDeliveriesResponseItem = zod.object({
   "driverId": zod.int().nullish(),
   "customerName": zod.string().nullish(),
   "driverName": zod.string().nullish(),
+  "driverEmail": zod.string().nullish(),
+  "driverPhone": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
@@ -980,6 +996,8 @@ export const GetAdminAnalyticsResponse = zod.object({
   "driverId": zod.int().nullish(),
   "customerName": zod.string().nullish(),
   "driverName": zod.string().nullish(),
+  "driverEmail": zod.string().nullish(),
+  "driverPhone": zod.string().nullish(),
   "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),

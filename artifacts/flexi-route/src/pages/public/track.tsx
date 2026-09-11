@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearch } from 'wouter';
+import { useLocation, useParams, useSearch } from 'wouter';
 import { getTrackShipmentQueryKey, useTrackShipment } from '@workspace/api-client-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -42,9 +42,12 @@ function getPaymentEndpoint(trackingNumber: string): string {
 }
 
 export default function Track() {
+  const [, setLocation] = useLocation();
+  const { number: pathTracking } = useParams<{ number?: string }>();
   const search = useSearch();
   const searchParams = new URLSearchParams(search);
-  const initialTracking = searchParams.get('number') || '';
+  const routeTracking = (pathTracking ? decodeURIComponent(pathTracking) : searchParams.get('number') || '').trim();
+  const initialTracking = routeTracking;
 
   const [trackingInput, setTrackingInput] = useState(initialTracking);
   const [activeTracking, setActiveTracking] = useState(initialTracking);
@@ -67,6 +70,24 @@ export default function Track() {
   const existingPayment: PaymentInfo | null = info?.payment ?? null;
   const estimatedAmount: string = info?.estimatedAmount ?? '0.00';
 
+  const resetPaymentState = () => {
+    setPayStep('select');
+    setSelectedCurrency('');
+    setTxidInput('');
+    setPaymentInfo(null);
+  };
+
+  // Each tracking number has its own route and starts with a clean payment
+  // flow. This prevents a previous shipment's address or transaction state
+  // from appearing while the new shipment is loading.
+  useEffect(() => {
+    setTrackingInput(routeTracking);
+    if (routeTracking !== activeTracking) {
+      setActiveTracking(routeTracking);
+      resetPaymentState();
+    }
+  }, [routeTracking]);
+
   // If there's already a payment record, jump to the right step
   useEffect(() => {
     if (!existingPayment) return;
@@ -82,20 +103,18 @@ export default function Track() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (trackingInput.trim()) {
-      setActiveTracking(trackingInput.trim());
-      window.history.pushState({}, '', `/track?number=${encodeURIComponent(trackingInput.trim())}`);
+    const nextTracking = trackingInput.trim();
+    if (!nextTracking) return;
+
+    const target = `/track/${encodeURIComponent(nextTracking)}`;
+    if (nextTracking === routeTracking) {
+      // A repeated search for the same valid code must still refresh the
+      // server data instead of relying on the cached query result.
+      void refetch();
+    } else {
+      setLocation(target);
     }
   };
-
-  useEffect(() => {
-    const currentParams = new URLSearchParams(search);
-    const num = currentParams.get('number');
-    if (num && num !== activeTracking) {
-      setTrackingInput(num);
-      setActiveTracking(num);
-    }
-  }, [search]);
 
   const handleGetAddress = async () => {
     if (!selectedCurrency) { toast.error('Please select a cryptocurrency'); return; }
@@ -180,7 +199,7 @@ export default function Track() {
                   className="pl-12 h-14 text-lg"
                 />
               </div>
-              <Button type="submit" size="lg" className="h-14 px-8" disabled={isLoading}>
+              <Button type="submit" size="lg" className="h-14 px-8">
                 {isLoading ? 'Tracking...' : 'Track Package'}
               </Button>
             </form>

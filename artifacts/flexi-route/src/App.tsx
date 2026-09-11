@@ -69,7 +69,7 @@ function AppRouter() {
         <PublicLayout><Track /></PublicLayout>
       </Route>
       <Route path="/track/:number">
-        {(params) => <Redirect to={`/track?number=${params.number}`} />}
+        <PublicLayout><Track /></PublicLayout>
       </Route>
       <Route path="/pricing">
         <PublicLayout><Pricing /></PublicLayout>

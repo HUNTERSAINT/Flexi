@@ -168,6 +168,7 @@ export const PaymentCurrency = {
   USDT_ERC20: 'USDT_ERC20',
   USDC: 'USDC',
   LTC: 'LTC',
+  XRP: 'XRP',
 } as const;
 
 export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
@@ -283,9 +284,9 @@ export interface ShipmentUpdate {
   driverId?: number | null;
   estimatedDelivery?: string;
   totalAmount?: number;
-  /** ISO timestamp representing the selected date and time in statusTimezone. */
+  /** ISO timestamp for when the status update occurred. */
   statusUpdatedAt?: string;
-  /** IANA timezone used to interpret statusUpdatedAt. */
+  /** IANA timezone used to interpret the selected status time. */
   statusTimezone?: string;
 }
 

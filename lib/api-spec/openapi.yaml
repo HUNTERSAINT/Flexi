@@ -1382,7 +1382,7 @@ components:
           type: number
         currency:
           type: string
-          enum: [BTC, ETH, USDT_TRC20, USDT_ERC20, USDC, LTC]
+          enum: [BTC, ETH, USDT_TRC20, USDT_ERC20, USDC, LTC, XRP]
         walletAddress:
           type: string
         txid:

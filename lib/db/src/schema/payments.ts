@@ -10,6 +10,7 @@ export const cryptoCurrencyEnum = pgEnum("crypto_currency", [
   "USDT_ERC20",
   "USDC",
   "LTC",
+  "XRP",
 ]);
 
 export const paymentStatusEnum = pgEnum("payment_status", [

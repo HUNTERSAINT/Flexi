@@ -13,8 +13,8 @@ export interface ShipmentUpdate {
   driverId?: number | null;
   estimatedDelivery?: Date;
   totalAmount?: number;
-  /** ISO timestamp representing the selected date and time in statusTimezone. */
+  /** ISO timestamp for when the status update occurred. */
   statusUpdatedAt?: Date;
-  /** IANA timezone used to interpret statusUpdatedAt. */
+  /** IANA timezone used to interpret the selected status time. */
   statusTimezone?: string;
 }

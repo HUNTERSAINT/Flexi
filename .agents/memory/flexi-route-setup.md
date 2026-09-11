@@ -40,6 +40,11 @@ description: Bootstrap decisions, DB schema notes, and feature implementation de
 - If receiver pays: skip payment creation, store `recipientEmail` on shipment, show confirmation message
 - Payment is collected when receiver visits tracking page (future: add payment button on public track page)
 
+## Payment currency consistency
+- Keep supported cryptocurrency values aligned across the database enum, API contract, wallet seed data, and payment UI.
+- **Why:** A wallet can exist for a currency while payment-row creation still fails at runtime if the database enum or generated contract omits it.
+- **How to apply:** When adding a currency, update all four surfaces, regenerate API types, and push the development schema before testing the receiver payment flow.
+
 ## Pages with real content + Unsplash images
 - About, Services, Contact, FAQ — all fully implemented with images and real copy
 - 404 (not-found.tsx) already existed in the codebase
