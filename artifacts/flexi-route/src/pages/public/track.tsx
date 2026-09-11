@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useParams, useSearch } from 'wouter';
+import { useParams, useSearch } from 'wouter';
 import { getTrackShipmentQueryKey, useTrackShipment } from '@workspace/api-client-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,6 @@ function getPaymentEndpoint(trackingNumber: string): string {
 }
 
 export default function Track() {
-  const [, setLocation] = useLocation();
   const { number: pathTracking } = useParams<{ number?: string }>();
   const search = useSearch();
   const searchParams = new URLSearchParams(search);
@@ -106,14 +105,11 @@ export default function Track() {
     const nextTracking = trackingInput.trim();
     if (!nextTracking) return;
 
-    const target = `/track/${encodeURIComponent(nextTracking)}`;
-    if (nextTracking === routeTracking) {
-      // A repeated search for the same valid code must still refresh the
-      // server data instead of relying on the cached query result.
-      void refetch();
-    } else {
-      setLocation(target);
-    }
+    const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+    const target = `${basePath}/track/${encodeURIComponent(nextTracking)}`;
+    // Full navigation makes the button refresh the current shipment and
+    // opens a distinct canonical route when the code changes.
+    window.location.assign(target);
   };
 
   const handleGetAddress = async () => {

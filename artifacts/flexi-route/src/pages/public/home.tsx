@@ -12,9 +12,10 @@ export default function Home() {
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
     if (trackingNumber.trim()) {
-      const target = `/track/${encodeURIComponent(trackingNumber.trim())}`;
-      // Always reload from the home form so a repeated valid search refreshes
-      // the shipment data even when the browser is already on that URL.
+      const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+      const target = `${basePath}/track/${encodeURIComponent(trackingNumber.trim())}`;
+      // A full navigation refreshes the shipment data, even when the same
+      // valid tracking number is submitted again.
       window.location.assign(target);
     }
   };
