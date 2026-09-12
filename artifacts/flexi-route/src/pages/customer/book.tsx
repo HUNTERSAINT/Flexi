@@ -88,9 +88,13 @@ export default function BookShipment() {
 
   const handleNext = async () => {
     let isValid = false;
-    if (step === 1) isValid = await form.trigger(['serviceType', 'weightKg']);
-    else if (step === 2) isValid = await form.trigger(['originAddress', 'originCity', 'originState', 'originZip', 'destinationAddress', 'destinationCity', 'destinationState', 'destinationZip']);
+    if (step === 1) isValid = await form.trigger(['serviceType', 'weightKg'], { shouldFocus: true });
+    else if (step === 2) isValid = await form.trigger(['originAddress', 'originCity', 'originState', 'originZip', 'destinationAddress', 'destinationCity', 'destinationState', 'destinationZip'], { shouldFocus: true });
     else isValid = true;
+    if (!isValid) {
+      toast.error('Please fix the highlighted fields before continuing');
+      return;
+    }
     if (isValid) setStep(s => s + 1);
   };
 
@@ -400,9 +404,9 @@ export default function BookShipment() {
                     </div>
                     <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
                       {!watchValues.receiverPays && (
-                        <Button onClick={() => setLocation('/dashboard/payments')} size="lg" className="h-12 px-8 text-lg">Go to Payments</Button>
+                        <Button type="button" onClick={() => setLocation('/dashboard/payments')} size="lg" className="h-12 px-8 text-lg">Go to Payments</Button>
                       )}
-                      <Button onClick={() => setLocation(`/dashboard/tracking/${finalTracking}`)} variant="outline" size="lg" className="h-12 px-8 text-lg">Track Shipment</Button>
+                      <Button type="button" onClick={() => setLocation(`/dashboard/tracking/${encodeURIComponent(finalTracking)}`)} variant="outline" size="lg" className="h-12 px-8 text-lg">Track Shipment</Button>
                     </div>
                   </motion.div>
                 )}

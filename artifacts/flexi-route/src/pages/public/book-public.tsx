@@ -15,7 +15,7 @@ import { Package, MapPin, CheckCircle2, ChevronRight, Loader2, CreditCard, User 
 import { motion, AnimatePresence } from 'framer-motion';
 
 const serviceTypes = ['standard', 'express', 'overnight', 'freight'] as const;
-const currencies = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC'] as const;
+const currencies = ['BTC', 'ETH', 'USDT_TRC20', 'USDT_ERC20', 'USDC', 'LTC', 'XRP'] as const;
 const serviceOptions = [
   { value: 'standard', label: 'Standard', estimatedDays: '5–7 business days' },
   { value: 'express', label: 'Express', estimatedDays: '2–3 business days' },
@@ -106,14 +106,48 @@ export default function BookPublic() {
         toast.error('Please choose who will pay for this shipment');
         return;
       }
-      if (watchValues.receiverPays) fields = [];
-      else fields = ['currency'];
+      if (watchValues.receiverPays) {
+        if (!watchValues.recipientEmail?.trim()) {
+          form.setError('recipientEmail', { type: 'manual', message: 'Recipient email required when the receiver pays' });
+          toast.error('Please enter the recipient email');
+          return;
+        }
+        fields = ['recipientEmail'];
+      } else {
+        if (!watchValues.currency) {
+          form.setError('currency', { type: 'manual', message: 'Select a cryptocurrency for payment' });
+          toast.error('Please select a cryptocurrency for payment');
+          return;
+        }
+        fields = ['currency'];
+      }
     }
-    const isValid = fields.length ? await form.trigger(fields) : true;
+    const isValid = fields.length ? await form.trigger(fields, { shouldFocus: true }) : true;
+    if (!isValid) {
+      toast.error('Please fix the highlighted fields before continuing');
+      return;
+    }
     if (isValid) setStep(s => s + 1);
   };
 
   const onSubmit = async (data: BookingValues) => {
+    if (typeof data.receiverPays !== 'boolean') {
+      toast.error('Please choose who will pay for this shipment');
+      setStep(4);
+      return;
+    }
+    if (data.receiverPays && !data.recipientEmail?.trim()) {
+      form.setError('recipientEmail', { type: 'manual', message: 'Recipient email required when the receiver pays' });
+      toast.error('Please enter the recipient email');
+      setStep(4);
+      return;
+    }
+    if (!data.receiverPays && !data.currency) {
+      form.setError('currency', { type: 'manual', message: 'Select a cryptocurrency for payment' });
+      toast.error('Please select a cryptocurrency for payment');
+      setStep(4);
+      return;
+    }
     try {
       const result = await createGuestShipment.mutateAsync({
         data: {
@@ -447,15 +481,15 @@ export default function BookPublic() {
                       <p className="text-3xl font-mono font-bold text-secondary tracking-tight">{finalTracking}</p>
                     </div>
                     <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-                      <Button onClick={() => setLocation(`/track?number=${finalTracking}`)} size="lg" className="h-12 px-8">
+                      <Button type="button" onClick={() => setLocation(`/track/${encodeURIComponent(finalTracking)}`)} size="lg" className="h-12 px-8">
                         Track Shipment
                       </Button>
                       {!watchValues.receiverPays && (
-                        <Button onClick={() => { window.location.href = '/dashboard/payments'; }} variant="outline" size="lg" className="h-12 px-8">
+                        <Button type="button" onClick={() => setLocation('/dashboard/payments')} variant="outline" size="lg" className="h-12 px-8">
                           Go to Payments
                         </Button>
                       )}
-                      <Button onClick={() => setLocation('/register')} variant="ghost" size="lg" className="h-12 px-8 text-primary">
+                      <Button type="button" onClick={() => setLocation('/register')} variant="ghost" size="lg" className="h-12 px-8 text-primary">
                         Create Account
                       </Button>
                     </div>
