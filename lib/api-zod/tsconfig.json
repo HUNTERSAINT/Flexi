@@ -5,17 +5,8 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "outDir": "dist",
-<<<<<<< HEAD
-<<<<<<< HEAD
     "rootDir": "src",
     "lib": ["es2022", "dom"]
-=======
-    "rootDir": "src"
->>>>>>> 0c05d76 (Initial commit)
-=======
-    "rootDir": "src",
-    "lib": ["es2022", "dom"]
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
   },
   "include": ["src"]
 }

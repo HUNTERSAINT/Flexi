@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { useCreateGuestShipment, useListPricing } from '@workspace/api-client-react';
-<<<<<<< HEAD
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-=======
 import { FieldErrors, Resolver, useForm } from 'react-hook-form';
 import { z } from 'zod';
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -57,8 +51,6 @@ const bookingSchema = z.object({
 
 type BookingValues = z.infer<typeof bookingSchema>;
 
-<<<<<<< HEAD
-=======
 const stepFields = {
   sender: ['guestName', 'guestEmail', 'guestPhone'] as const,
   package: ['serviceType', 'weightKg'] as const,
@@ -113,7 +105,6 @@ const bookingResolver: Resolver<BookingValues> = async (values) => {
   return { values: {}, errors };
 };
 
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 const STEPS = [
   { id: 1, title: 'Your Info', icon: User },
   { id: 2, title: 'Package', icon: Package },
@@ -138,11 +129,7 @@ export default function BookPublic() {
     : serviceOptions;
 
   const form = useForm<BookingValues>({
-<<<<<<< HEAD
-    resolver: zodResolver(bookingSchema),
-=======
     resolver: bookingResolver,
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
     defaultValues: {
       guestName: '', guestEmail: '', guestPhone: '',
       serviceType: 'standard', weightKg: 1,
@@ -162,15 +149,6 @@ export default function BookPublic() {
     ? (Number(selectedService.basePriceUsd) + (watchValues.weightKg * Number(selectedService.pricePerKg))).toFixed(2)
     : '0.00';
 
-<<<<<<< HEAD
-  const handleNext = async () => {
-    let fields: (keyof BookingValues)[] = [];
-    if (step === 1) fields = ['guestName', 'guestEmail', 'guestPhone'];
-    else if (step === 2) fields = ['serviceType', 'weightKg'];
-    else if (step === 3) fields = ['originAddress', 'originCity', 'originState', 'originZip', 'destinationAddress', 'destinationCity', 'destinationState', 'destinationZip'];
-    else if (step === 4) {
-      if (typeof watchValues.receiverPays !== 'boolean') {
-=======
   const validateStep = (
     schema: z.ZodType,
     fields: readonly (keyof BookingValues)[],
@@ -204,7 +182,6 @@ export default function BookPublic() {
       form.clearErrors(['receiverPays', 'recipientEmail', 'currency']);
       if (typeof watchValues.receiverPays !== 'boolean') {
         form.setError('receiverPays', { type: 'manual', message: 'Choose a payer' });
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
         toast.error('Please choose who will pay for this shipment');
         return;
       }
@@ -214,26 +191,14 @@ export default function BookPublic() {
           toast.error('Please enter the recipient email');
           return;
         }
-<<<<<<< HEAD
-        fields = ['recipientEmail'];
-      } else {
-=======
       } else if (!watchValues.receiverPays) {
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
         if (!watchValues.currency) {
           form.setError('currency', { type: 'manual', message: 'Select a cryptocurrency for payment' });
           toast.error('Please select a cryptocurrency for payment');
           return;
         }
-<<<<<<< HEAD
-        fields = ['currency'];
       }
     }
-    const isValid = fields.length ? await form.trigger(fields, { shouldFocus: true }) : true;
-=======
-      }
-    }
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
     if (!isValid) {
       toast.error('Please fix the highlighted fields before continuing');
       return;
@@ -481,13 +446,8 @@ export default function BookPublic() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <button
                         type="button"
-<<<<<<< HEAD
-                        onClick={() => form.setValue('receiverPays', false)}
-                        className={`p-6 rounded-2xl border-2 text-left transition-all ${!watchValues.receiverPays ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
-=======
                         onClick={() => form.setValue('receiverPays', false, { shouldDirty: true, shouldTouch: true })}
                         className={`p-6 rounded-2xl border-2 text-left transition-all ${watchValues.receiverPays === false ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
                       >
                         <div className="font-bold text-secondary text-lg mb-1">Sender Pays</div>
                         <p className="text-gray-600 text-sm">You pay for the shipment now using cryptocurrency.</p>
@@ -495,11 +455,7 @@ export default function BookPublic() {
                       </button>
                       <button
                         type="button"
-<<<<<<< HEAD
-                        onClick={() => form.setValue('receiverPays', true)}
-=======
                         onClick={() => form.setValue('receiverPays', true, { shouldDirty: true, shouldTouch: true })}
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
                         className={`p-6 rounded-2xl border-2 text-left transition-all ${watchValues.receiverPays ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'}`}
                       >
                         <div className="font-bold text-secondary text-lg mb-1">Receiver Pays</div>

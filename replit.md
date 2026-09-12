@@ -136,11 +136,7 @@ After OpenAPI spec changes: `pnpm --filter @workspace/api-spec run generate`
 - US-based logistics company
 - Crypto-only payments (no card/bank integration)
 - No blockchain APIs — manual TXID + proof-of-payment review flow
-=======
-# [Project name]
-=======
 # Flexi Route — Logistics Platform
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 
 Full-stack US logistics website with customer, driver, and admin portals plus a crypto-only payment system.
 
@@ -214,10 +210,6 @@ Wallet addresses are configured via environment variables (`WALLET_BTC`, `WALLET
 - `/dashboard/notifications` — Notification centre
 - `/dashboard/tracking/:trackingNumber` — Detailed tracking timeline
 
-<<<<<<< HEAD
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
->>>>>>> 0c05d76 (Initial commit)
-=======
 ### Admin Dashboard (`/admin/*`)
 - `/admin` — Analytics: revenue, counts, chart by status
 - `/admin/shipments` — All shipments + status management + driver assignment
@@ -281,4 +273,3 @@ After OpenAPI spec changes: `pnpm --filter @workspace/api-spec run generate`
 - US-based logistics company
 - Crypto-only payments (no card/bank integration)
 - No blockchain APIs — manual TXID + proof-of-payment review flow
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)

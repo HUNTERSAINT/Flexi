@@ -3,25 +3,13 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-<<<<<<< HEAD
-<<<<<<< HEAD
   description: Flexi Route Logistics API
-=======
-  description: API specification
->>>>>>> 0c05d76 (Initial commit)
-=======
-  description: Flexi Route Logistics API
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
   - name: auth
     description: Authentication
   - name: users
@@ -41,24 +29,12 @@ tags:
   - name: pricing
     description: Pricing management
 
-<<<<<<< HEAD
-=======
->>>>>>> 0c05d76 (Initial commit)
-=======
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-      description: Returns server health status
->>>>>>> 0c05d76 (Initial commit)
-=======
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
       responses:
         "200":
           description: Healthy
@@ -66,10 +42,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 
   # --- AUTH ---
   /auth/register:
@@ -1011,12 +983,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
-<<<<<<< HEAD
-=======
-components:
->>>>>>> 0c05d76 (Initial commit)
-=======
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
   schemas:
     HealthStatus:
       type: object
@@ -1026,10 +992,6 @@ components:
       required:
         - status
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
     ErrorResponse:
       type: object
       properties:
@@ -1684,8 +1646,3 @@ components:
           type: string
         description:
           type: string
-<<<<<<< HEAD
-=======
->>>>>>> 0c05d76 (Initial commit)
-=======
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
