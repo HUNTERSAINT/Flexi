@@ -3,13 +3,18 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
+<<<<<<< HEAD
   description: Flexi Route Logistics API
+=======
+  description: API specification
+>>>>>>> 0c05d76 (Initial commit)
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+<<<<<<< HEAD
   - name: auth
     description: Authentication
   - name: users
@@ -29,12 +34,18 @@ tags:
   - name: pricing
     description: Pricing management
 
+=======
+>>>>>>> 0c05d76 (Initial commit)
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
+<<<<<<< HEAD
+=======
+      description: Returns server health status
+>>>>>>> 0c05d76 (Initial commit)
       responses:
         "200":
           description: Healthy
@@ -42,6 +53,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+<<<<<<< HEAD
 
   # --- AUTH ---
   /auth/register:
@@ -983,6 +995,9 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+=======
+components:
+>>>>>>> 0c05d76 (Initial commit)
   schemas:
     HealthStatus:
       type: object
@@ -992,6 +1007,7 @@ components:
       required:
         - status
 
+<<<<<<< HEAD
     ErrorResponse:
       type: object
       properties:
@@ -1646,3 +1662,5 @@ components:
           type: string
         description:
           type: string
+=======
+>>>>>>> 0c05d76 (Initial commit)

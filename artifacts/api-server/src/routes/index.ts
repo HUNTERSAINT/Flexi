@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+<<<<<<< HEAD
 import path from "path";
 import healthRouter from "./health";
 import authRouter from "./auth";
@@ -32,5 +33,12 @@ router.use(adminRouter);
 router.use(pricingRouter);
 router.use(walletsRouter);
 router.use(trackingRouter);
+=======
+import healthRouter from "./health";
+
+const router: IRouter = Router();
+
+router.use(healthRouter);
+>>>>>>> 0c05d76 (Initial commit)
 
 export default router;

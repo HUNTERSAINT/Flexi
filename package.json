@@ -10,11 +10,16 @@
   },
   "private": true,
   "dependencies": {
+<<<<<<< HEAD
     "@replit/connectors-sdk": "^0.4.1"
+=======
+    "@replit/connectors-sdk": "^0.4.3"
+>>>>>>> 0c05d76 (Initial commit)
   },
   "devDependencies": {
     "prettier": "^3.9.6",
     "typescript": "~5.9.3"
+<<<<<<< HEAD
   },
   "packageManager": "pnpm@10.26.1",
   "pnpm": {
@@ -101,5 +106,7 @@
       "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0",
       "esbuild": "0.27.3"
     }
+=======
+>>>>>>> 0c05d76 (Initial commit)
   }
 }
