@@ -65,10 +65,14 @@ catalog:
   vite: ^7.3.2
   wouter: ^3.3.5
 <<<<<<< HEAD
+<<<<<<< HEAD
   zod: ^4.0.0
 =======
   zod: ^3.25.76
 >>>>>>> 0c05d76 (Initial commit)
+=======
+  zod: ^4.0.0
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 
 autoInstallPeers: false
 
@@ -77,6 +81,7 @@ onlyBuiltDependencies:
   - esbuild
   - msw
   - unrs-resolver
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 
@@ -167,3 +172,5 @@ overrides:
   # orval pins js-yaml to an exact version older than the CVE fix (>=4.3.2)
   js-yaml: '4.3.2'
 >>>>>>> 0c05d76 (Initial commit)
+=======
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)

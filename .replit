@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
 =======
 modules = ["nodejs-24"]
 >>>>>>> 0c05d76 (Initial commit)
+=======
+modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 
 [deployment]
 router = "application"
@@ -23,6 +27,9 @@ expertMode = true
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 
 [nix]
 channel = "stable-25_05"
@@ -32,5 +39,8 @@ channel = "stable-25_05"
 [userenv.shared]
 EMAIL_FROM = "Flexi Route <Support@flexirouteglobal.com>"
 APP_URL = "https://flexirouteglobal.com"
+<<<<<<< HEAD
 =======
 >>>>>>> 0c05d76 (Initial commit)
+=======
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)

@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useCreateShipment, useCreatePayment, useListPricing, ShipmentInputServiceType, PaymentInputCurrency } from '@workspace/api-client-react';
+<<<<<<< HEAD
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+=======
+import { FieldErrors, Resolver, useForm } from 'react-hook-form';
+import { z } from 'zod';
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -42,6 +47,54 @@ const bookingSchema = z.object({
 
 type BookingValues = z.infer<typeof bookingSchema>;
 
+<<<<<<< HEAD
+=======
+const packageFields = ['serviceType', 'weightKg'] as const;
+const routeFields = [
+  'originAddress',
+  'originCity',
+  'originState',
+  'originZip',
+  'destinationAddress',
+  'destinationCity',
+  'destinationState',
+  'destinationZip',
+] as const;
+const packageSchema = bookingSchema.pick({
+  serviceType: true,
+  weightKg: true,
+});
+const routeSchema = bookingSchema.pick({
+  originAddress: true,
+  originCity: true,
+  originState: true,
+  originZip: true,
+  destinationAddress: true,
+  destinationCity: true,
+  destinationState: true,
+  destinationZip: true,
+});
+
+const bookingResolver: Resolver<BookingValues> = async (values) => {
+  const result = bookingSchema.safeParse(values);
+  if (result.success) {
+    return { values: result.data, errors: {} };
+  }
+
+  const errors: FieldErrors<BookingValues> = {};
+  for (const issue of result.error.issues) {
+    const field = issue.path[0];
+    if (typeof field === 'string' && field in values && !errors[field as keyof BookingValues]) {
+      errors[field as keyof BookingValues] = {
+        type: issue.code,
+        message: issue.message,
+      };
+    }
+  }
+  return { values: {}, errors };
+};
+
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 const STEPS = [
   { id: 1, title: 'Package', icon: Package },
   { id: 2, title: 'Route', icon: MapPin },
@@ -63,7 +116,11 @@ export default function BookShipment() {
     : serviceOptions;
 
   const form = useForm<BookingValues>({
+<<<<<<< HEAD
     resolver: zodResolver(bookingSchema),
+=======
+    resolver: bookingResolver,
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
     defaultValues: {
       serviceType: ShipmentInputServiceType.standard,
       weightKg: 1,
@@ -86,11 +143,38 @@ export default function BookShipment() {
     ? (Number(selectedService.basePriceUsd) + (watchValues.weightKg * Number(selectedService.pricePerKg))).toFixed(2)
     : '0.00';
 
+<<<<<<< HEAD
   const handleNext = async () => {
     let isValid = false;
     if (step === 1) isValid = await form.trigger(['serviceType', 'weightKg'], { shouldFocus: true });
     else if (step === 2) isValid = await form.trigger(['originAddress', 'originCity', 'originState', 'originZip', 'destinationAddress', 'destinationCity', 'destinationState', 'destinationZip'], { shouldFocus: true });
     else isValid = true;
+=======
+  const validateStep = (
+    schema: z.ZodType,
+    fields: readonly (keyof BookingValues)[],
+  ) => {
+    form.clearErrors(fields);
+    const result = schema.safeParse(form.getValues());
+    if (result.success) return true;
+
+    for (const issue of result.error.issues) {
+      const field = issue.path[0];
+      if (typeof field === 'string' && fields.includes(field as keyof BookingValues)) {
+        form.setError(field as keyof BookingValues, {
+          type: 'manual',
+          message: issue.message,
+        });
+      }
+    }
+    return false;
+  };
+
+  const handleNext = async () => {
+    let isValid = true;
+    if (step === 1) isValid = validateStep(packageSchema, packageFields);
+    else if (step === 2) isValid = validateStep(routeSchema, routeFields);
+>>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
     if (!isValid) {
       toast.error('Please fix the highlighted fields before continuing');
       return;
