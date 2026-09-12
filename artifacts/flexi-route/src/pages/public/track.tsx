@@ -165,6 +165,17 @@ export default function Track() {
     }
   };
 
+  const handleChangePaymentMethod = () => {
+    if (existingPayment && existingPayment.status !== 'awaiting_payment') {
+      toast.error('This payment can no longer be changed because it is under review or confirmed.');
+      return;
+    }
+    setSelectedCurrency('');
+    setPaymentInfo(null);
+    setTxidInput('');
+    setPayStep('select');
+  };
+
   const copyAddress = () => {
     if (paymentInfo?.walletAddress) {
       navigator.clipboard.writeText(paymentInfo.walletAddress);
@@ -260,7 +271,7 @@ export default function Track() {
                           <p className="text-gray-500 text-sm font-medium mb-2">Send to this wallet address</p>
                           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-3">
                             <code className="text-xs text-secondary break-all flex-1 font-mono">{paymentInfo.walletAddress}</code>
-                            <button onClick={copyAddress} className="shrink-0 text-gray-400 hover:text-primary transition-colors" title="Copy address">
+                            <button type="button" onClick={copyAddress} className="shrink-0 text-gray-400 hover:text-primary transition-colors" title="Copy address">
                               <Copy className="h-4 w-4" />
                             </button>
                           </div>
@@ -285,6 +296,15 @@ export default function Track() {
                           </Button>
                         </div>
                         <p className="text-xs text-gray-500">You can find your Transaction ID in your crypto wallet's transaction history.</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleChangePaymentMethod}
+                          disabled={isPaySubmitting}
+                          className="w-full h-11"
+                        >
+                          Change Payment Method
+                        </Button>
                       </div>
                     </div>
                   ) : (
