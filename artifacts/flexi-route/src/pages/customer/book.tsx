@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useCreateShipment, useCreatePayment, useListPricing, ShipmentInputServiceType, PaymentInputCurrency } from '@workspace/api-client-react';
-<<<<<<< HEAD
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-=======
 import { FieldErrors, Resolver, useForm } from 'react-hook-form';
 import { z } from 'zod';
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -47,8 +41,6 @@ const bookingSchema = z.object({
 
 type BookingValues = z.infer<typeof bookingSchema>;
 
-<<<<<<< HEAD
-=======
 const packageFields = ['serviceType', 'weightKg'] as const;
 const routeFields = [
   'originAddress',
@@ -94,7 +86,6 @@ const bookingResolver: Resolver<BookingValues> = async (values) => {
   return { values: {}, errors };
 };
 
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
 const STEPS = [
   { id: 1, title: 'Package', icon: Package },
   { id: 2, title: 'Route', icon: MapPin },
@@ -116,11 +107,7 @@ export default function BookShipment() {
     : serviceOptions;
 
   const form = useForm<BookingValues>({
-<<<<<<< HEAD
-    resolver: zodResolver(bookingSchema),
-=======
     resolver: bookingResolver,
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
     defaultValues: {
       serviceType: ShipmentInputServiceType.standard,
       weightKg: 1,
@@ -143,13 +130,6 @@ export default function BookShipment() {
     ? (Number(selectedService.basePriceUsd) + (watchValues.weightKg * Number(selectedService.pricePerKg))).toFixed(2)
     : '0.00';
 
-<<<<<<< HEAD
-  const handleNext = async () => {
-    let isValid = false;
-    if (step === 1) isValid = await form.trigger(['serviceType', 'weightKg'], { shouldFocus: true });
-    else if (step === 2) isValid = await form.trigger(['originAddress', 'originCity', 'originState', 'originZip', 'destinationAddress', 'destinationCity', 'destinationState', 'destinationZip'], { shouldFocus: true });
-    else isValid = true;
-=======
   const validateStep = (
     schema: z.ZodType,
     fields: readonly (keyof BookingValues)[],
@@ -174,7 +154,6 @@ export default function BookShipment() {
     let isValid = true;
     if (step === 1) isValid = validateStep(packageSchema, packageFields);
     else if (step === 2) isValid = validateStep(routeSchema, routeFields);
->>>>>>> 140d7fa (Update API server routes and regenerate client SDKs)
     if (!isValid) {
       toast.error('Please fix the highlighted fields before continuing');
       return;
@@ -238,7 +217,6 @@ export default function BookShipment() {
         <p className="text-gray-500">Fill out the details below to schedule your delivery.</p>
       </div>
 
-      {/* Progress Steps */}
       {step < 5 && (
         <div className="flex items-center justify-between mb-12 relative">
           <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10 -translate-y-1/2 rounded-full"></div>
@@ -263,7 +241,6 @@ export default function BookShipment() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <AnimatePresence mode="wait">
-                {/* STEP 1 */}
                 {step === 1 && (
                   <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                     <h2 className="text-xl font-bold text-secondary border-b pb-4">Package Details</h2>
@@ -309,7 +286,6 @@ export default function BookShipment() {
                   </motion.div>
                 )}
 
-                {/* STEP 2 */}
                 {step === 2 && (
                   <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -364,7 +340,6 @@ export default function BookShipment() {
                   </motion.div>
                 )}
 
-                {/* STEP 3: Review */}
                 {step === 3 && (
                   <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                     <h2 className="text-2xl font-bold text-secondary text-center mb-6">Review Your Shipment</h2>
@@ -406,7 +381,6 @@ export default function BookShipment() {
                   </motion.div>
                 )}
 
-                {/* STEP 4: Payment */}
                 {step === 4 && (
                   <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                     <h2 className="text-xl font-bold text-secondary border-b pb-4">Who Pays?</h2>
@@ -470,7 +444,6 @@ export default function BookShipment() {
                   </motion.div>
                 )}
 
-                {/* STEP 5: Success */}
                 {step === 5 && (
                   <motion.div key="s5" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="py-12 text-center space-y-6">
                     <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
@@ -520,4 +493,4 @@ export default function BookShipment() {
       </Card>
     </div>
   );
-}
+                    }
