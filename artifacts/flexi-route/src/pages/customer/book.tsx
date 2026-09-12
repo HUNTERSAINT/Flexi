@@ -493,4 +493,8 @@ export default function BookShipment() {
       </Card>
     </div>
   );
+<<<<<<< HEAD
                     }
+=======
+}
+>>>>>>> d070a81 (Fix merge conflicts in package.json, booking page, and regenerate pnpm-lock.yaml)

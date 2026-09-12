@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 # Flexi Route — Logistics Platform
 
 Full-stack US logistics website with customer, driver, and admin portals plus a crypto-only payment system.
