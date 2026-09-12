@@ -9,6 +9,14 @@ description: Bootstrap decisions, DB schema notes, and feature implementation de
 - DB schema: `lib/db/src/schema/` — Drizzle ORM + PostgreSQL
 - API client: `lib/api-client-react/src/generated/api.ts` — OpenAPI codegen (run `pnpm --filter @workspace/api-spec run codegen` after spec changes)
 
+## Railway startup
+- Keep each workspace package manifest named for its actual `@workspace/*` filter. Railway's service build commands depend on those filters matching.
+- Run Drizzle schema sync as a Railway pre-deploy command and keep the API start command limited to launching the built bundle. The API must begin listening before non-critical seed work.
+
+**Why:** Railway previously reported missing `drizzle-kit`, no API bundle, and health-check timeouts because package manifests had been overwritten and migration/seeding ran before the listener existed.
+
+**How to apply:** When changing Railway commands or workspace manifests, verify the filtered build locally, confirm `/api/healthz` returns 200, and query the Railway service instance before redeploying.
+
 ## CSS color theme
 - Primary: orange `25 95% 53%`
 - Secondary (sidebar/nav): dark navy `222 47% 11%`

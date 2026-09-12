@@ -60,7 +60,8 @@ application's secure setup flow. Never commit login credentials to this file.
 
 ### API Server
 - **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build`
-- **Start**: `cd /app/lib/db && (npx drizzle-kit push --config ./drizzle.config.ts || true) && node --enable-source-maps /app/artifacts/api-server/dist/index.mjs`
+- **Pre-deploy**: `pnpm --filter @workspace/db exec drizzle-kit push --config ./drizzle.config.ts`
+- **Start**: `node --enable-source-maps /app/artifacts/api-server/dist/index.mjs`
 - **Healthcheck**: `/api/healthz`
 
 ### Frontend
@@ -94,7 +95,7 @@ git push github main
 - The service build commands explicitly use `pnpm install --no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only).
 - The `railway.json` at repo root explicitly selects Railpack. Do not add a legacy `nixpacksPlan` or `railpack.json` override.
 - The frontend is served by the dependency-free Node server in `artifacts/flexi-route/server.mjs`; do not rely on a globally installed build-stage CLI at runtime.
-- Schema migrations run automatically at API startup via `drizzle-kit push`
+- Schema migrations run in Railway's pre-deploy phase before the API process starts
 - Admin user and default wallet addresses are seeded on first startup
 - Postgres data is persisted via Railway volume at `/var/lib/postgresql/data` (PGDATA subdirectory)
 - Rotate any database or admin credentials that were previously committed to this file before deploying.
