@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { useListShipments, useUpdateShipment, useAssignDriver, useListDrivers } from '@workspace/api-client-react';
+import {
+  getListShipmentStatusesQueryKey,
+  getListShipmentsQueryKey,
+  useCreateShipmentStatus,
+  useListShipmentStatuses,
+  useListShipments,
+  useUpdateShipment,
+  useAssignDriver,
+  useListDrivers,
+} from '@workspace/api-client-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,7 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, MoreVertical, Loader2, Truck, UserPlus } from 'lucide-react';
+import { Search, MoreVertical, Loader2, Truck, UserPlus, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 const FALLBACK_TIME_ZONES = [
@@ -68,18 +77,56 @@ function dateTimeLocalToIso(value: string, timeZone: string) {
   return new Date(instant).toISOString();
 }
 import { useQueryClient } from '@tanstack/react-query';
-import { getListShipmentsQueryKey } from '@workspace/api-client-react';
+
+type StatusOption = {
+  value: string;
+  label: string;
+  isSystem?: boolean;
+};
+
+const FALLBACK_STATUSES: StatusOption[] = [
+  { value: 'pending', label: 'Pending', isSystem: true },
+  { value: 'confirmed', label: 'Confirmed', isSystem: true },
+  { value: 'processing', label: 'Processing', isSystem: true },
+  { value: 'in_transit', label: 'In Transit', isSystem: true },
+  { value: 'out_for_delivery', label: 'Out for Delivery', isSystem: true },
+  { value: 'arrived_at_location', label: 'Arrived at location', isSystem: true },
+  { value: 'delivered', label: 'Delivered', isSystem: true },
+  { value: 'cancelled', label: 'Cancelled', isSystem: true },
+];
 
 export default function AdminShipments() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [newStatusLabel, setNewStatusLabel] = useState('');
   
   const { data: shipmentsData, isLoading } = useListShipments({
     status: statusFilter !== 'all' ? statusFilter as any : undefined,
     search: search || undefined
   });
+  const { data: fetchedStatuses = [] } = useListShipmentStatuses();
+  const createShipmentStatus = useCreateShipmentStatus();
+  const queryClient = useQueryClient();
 
   const shipments = shipmentsData?.data || [];
+  const statusOptions: StatusOption[] = fetchedStatuses.length > 0 ? fetchedStatuses : FALLBACK_STATUSES;
+
+  const handleCreateStatus = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const label = newStatusLabel.trim();
+    if (!label) {
+      toast.error('Enter a status name');
+      return;
+    }
+    try {
+      await createShipmentStatus.mutateAsync({ data: { label } });
+      await queryClient.invalidateQueries({ queryKey: getListShipmentStatusesQueryKey() });
+      setNewStatusLabel('');
+      toast.success(`Status "${label}" added`);
+    } catch (error: any) {
+      toast.error(error?.message || 'Could not add status');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -88,6 +135,38 @@ export default function AdminShipments() {
           <h1 className="text-3xl font-bold text-secondary tracking-tight">Shipment Management</h1>
         </div>
       </div>
+
+      <Card>
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+            <div>
+              <h2 className="text-lg font-semibold text-secondary">Shipment statuses</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Add a custom status for your operations. It will be available in shipment filters and status actions.
+              </p>
+            </div>
+            <form onSubmit={handleCreateStatus} className="flex w-full lg:w-auto gap-2">
+              <Input
+                value={newStatusLabel}
+                onChange={(event) => setNewStatusLabel(event.target.value)}
+                placeholder="e.g. Awaiting customs"
+                maxLength={60}
+                className="min-w-0 lg:w-72"
+                disabled={createShipmentStatus.isPending}
+              />
+              <Button type="submit" disabled={createShipmentStatus.isPending || !newStatusLabel.trim()}>
+                {createShipmentStatus.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                Add status
+              </Button>
+            </form>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {statusOptions.map((status) => (
+              <StatusBadge key={status.value} status={status.value} label={status.label} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 max-w-md">
@@ -105,13 +184,9 @@ export default function AdminShipments() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="in_transit">In Transit</SelectItem>
-            <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            {statusOptions.map((status) => (
+              <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -166,8 +241,8 @@ export default function AdminShipments() {
                     </td>
                     <td className="px-6 py-4"><StatusBadge status={shipment.status as any} /></td>
                     <td className="px-6 py-4 text-gray-500">{format(new Date(shipment.createdAt), 'MMM d')}</td>
-                    <td className="px-6 py-4 text-right">
-                      <ShipmentActions shipment={shipment} />
+                     <td className="px-6 py-4 text-right">
+                       <ShipmentActions shipment={shipment} statusOptions={statusOptions} />
                     </td>
                   </tr>
                 ))}
@@ -180,17 +255,17 @@ export default function AdminShipments() {
   );
 }
 
-function ShipmentActions({ shipment }: { shipment: any }) {
+function ShipmentActions({ shipment, statusOptions }: { shipment: any; statusOptions: StatusOption[] }) {
   const queryClient = useQueryClient();
   const updateShipment = useUpdateShipment();
   const [isAssignOpen, setIsAssignOpen] = useState(false);
-  const [statusDialog, setStatusDialog] = useState<{ status: string } | null>(null);
+  const [statusDialog, setStatusDialog] = useState<StatusOption | null>(null);
   const [statusDateTime, setStatusDateTime] = useState('');
   const [statusTimezone, setStatusTimezone] = useState(getDefaultTimeZone());
 
-  const openStatusDialog = (status: string) => {
+  const openStatusDialog = (status: StatusOption) => {
     const timezone = getDefaultTimeZone();
-    setStatusDialog({ status });
+    setStatusDialog(status);
     setStatusTimezone(timezone);
     setStatusDateTime(formatDateTimeLocal(new Date(), timezone));
   };
@@ -209,13 +284,13 @@ function ShipmentActions({ shipment }: { shipment: any }) {
     try {
       await updateShipment.mutateAsync({
         id: shipment.id,
-        data: { status: statusDialog.status as any, statusUpdatedAt, statusTimezone },
+        data: { status: statusDialog.value, statusUpdatedAt, statusTimezone },
       });
       queryClient.setQueryData(getListShipmentsQueryKey(), (old: any) => {
         if (!old || !old.data) return old;
-        return { ...old, data: old.data.map((s: any) => s.id === shipment.id ? { ...s, status: statusDialog.status } : s) };
+        return { ...old, data: old.data.map((s: any) => s.id === shipment.id ? { ...s, status: statusDialog.value } : s) };
       });
-      toast.success('Status updated to ' + statusDialog.status + ' (' + statusTimezone + ')');
+      toast.success('Status updated to ' + statusDialog.label + ' (' + statusTimezone + ')');
       setStatusDialog(null);
     } catch (e) {
       toast.error('Failed to update status');
@@ -233,12 +308,17 @@ function ShipmentActions({ shipment }: { shipment: any }) {
             <UserPlus className="mr-2 h-4 w-4" /> Assign Driver
           </DropdownMenuItem>
           <div className="border-t border-gray-100 my-1"></div>
-          <DropdownMenuItem onClick={() => openStatusDialog('confirmed')}>Set Confirmed</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openStatusDialog('processing')}>Set Processing</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openStatusDialog('in_transit')}>Set In Transit</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openStatusDialog('out_for_delivery')}>Set Out for Delivery</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openStatusDialog('delivered')}>Set Delivered</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openStatusDialog('cancelled')} className="text-red-600">Cancel Shipment</DropdownMenuItem>
+           {statusOptions
+             .filter((status) => status.value !== 'pending')
+             .map((status) => (
+               <DropdownMenuItem
+                 key={status.value}
+                 onClick={() => openStatusDialog(status)}
+                 className={status.value === 'cancelled' ? 'text-red-600' : undefined}
+               >
+                 Set {status.label}
+               </DropdownMenuItem>
+             ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -246,7 +326,7 @@ function ShipmentActions({ shipment }: { shipment: any }) {
       <Dialog open={!!statusDialog} onOpenChange={(open) => { if (!open && !updateShipment.isPending) setStatusDialog(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Set {statusDialog?.status.replace(/_/g, ' ')}</DialogTitle>
+             <DialogTitle>Set {statusDialog?.label}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-gray-500">Choose when this status update happened. The selected timezone will be used to interpret the date and time.</p>

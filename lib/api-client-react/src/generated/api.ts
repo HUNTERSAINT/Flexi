@@ -50,6 +50,8 @@ import type {
   ShipmentDetail,
   ShipmentInput,
   ShipmentListResponse,
+  ShipmentStatus,
+  ShipmentStatusInput,
   ShipmentUpdate,
   SuccessResponse,
   TrackingEvent,
@@ -2874,6 +2876,154 @@ export function useGetAdminAnalytics<TData = Awaited<ReturnType<typeof getAdminA
 
 
 
+export const getListShipmentStatusesUrl = () => {
+
+
+
+
+  return `/api/admin/statuses`
+}
+
+/**
+ * @summary List shipment statuses
+ */
+export const listShipmentStatuses = async ( options?: Parameters<typeof customFetch>[1]): Promise<ShipmentStatus[]> => {
+
+  return customFetch<ShipmentStatus[]>(getListShipmentStatusesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListShipmentStatusesQueryKey = () => {
+    return [
+    `/api/admin/statuses`
+    ] as const;
+    }
+
+
+export const getListShipmentStatusesQueryOptions = <TData = Awaited<ReturnType<typeof listShipmentStatuses>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listShipmentStatuses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListShipmentStatusesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listShipmentStatuses>>> = ({ signal }) => listShipmentStatuses({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listShipmentStatuses>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListShipmentStatusesQueryResult = NonNullable<Awaited<ReturnType<typeof listShipmentStatuses>>>
+export type ListShipmentStatusesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List shipment statuses
+ */
+
+export function useListShipmentStatuses<TData = Awaited<ReturnType<typeof listShipmentStatuses>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listShipmentStatuses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListShipmentStatusesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateShipmentStatusUrl = () => {
+
+
+
+
+  return `/api/admin/statuses`
+}
+
+/**
+ * @summary Add a custom shipment status
+ */
+export const createShipmentStatus = async (shipmentStatusInput: ShipmentStatusInput, options?: Parameters<typeof customFetch>[1]): Promise<ShipmentStatus> => {
+
+  return customFetch<ShipmentStatus>(getCreateShipmentStatusUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(shipmentStatusInput)
+  }
+);}
+
+
+
+
+
+export const getCreateShipmentStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShipmentStatus>>, TError,{data: BodyType<ShipmentStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShipmentStatus>>, TError,{data: BodyType<ShipmentStatusInput>}, TContext> => {
+
+const mutationKey = ['createShipmentStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShipmentStatus>>, {data: BodyType<ShipmentStatusInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createShipmentStatus(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShipmentStatusMutationResult = NonNullable<Awaited<ReturnType<typeof createShipmentStatus>>>
+    export type CreateShipmentStatusMutationBody = BodyType<ShipmentStatusInput>
+    export type CreateShipmentStatusMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a custom shipment status
+ */
+export const useCreateShipmentStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShipmentStatus>>, TError,{data: BodyType<ShipmentStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createShipmentStatus>>,
+        TError,
+        {data: BodyType<ShipmentStatusInput>},
+        TContext
+      > => {
+      return useMutation(getCreateShipmentStatusMutationOptions(options));
+    }
+
 export const getListPricingUrl = () => {
 
 
@@ -3022,3 +3172,4 @@ export const useUpdatePricing = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getUpdatePricingMutationOptions(options));
     }
+

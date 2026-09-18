@@ -56,6 +56,15 @@ vi.mock("@workspace/db", () => {
       trackingNumber: "shipments.trackingNumber",
       recipientEmail: "shipments.recipientEmail",
     },
+    pricingTable: {
+      serviceType: "pricing.serviceType",
+      basePriceUsd: "pricing.basePriceUsd",
+      pricePerKg: "pricing.pricePerKg",
+    },
+    shipmentStatusesTable: {
+      id: "shipment_statuses.id",
+      value: "shipment_statuses.value",
+    },
     trackingEventsTable: {
       shipmentId: "tracking_events.shipmentId",
       createdAt: "tracking_events.createdAt",
@@ -185,14 +194,20 @@ const baseBookingBody = {
  *  - db.insert() × 2 — tracking event row → [{ id: 1 }]
  */
 function setupPostShipmentMocks(shipmentRow: object = mockShipment) {
-  vi.mocked(db.select).mockImplementation(() => ({
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    leftJoin: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue([]),
-    orderBy: vi.fn().mockReturnThis(),
-    offset: vi.fn().mockReturnThis(),
-  } as any));
+  let selectCallCount = 0;
+  vi.mocked(db.select).mockImplementation(() => {
+    selectCallCount++;
+    return {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue(selectCallCount === 2
+        ? [{ basePriceUsd: "15", pricePerKg: "2.5" }]
+        : []),
+      orderBy: vi.fn().mockReturnThis(),
+      offset: vi.fn().mockReturnThis(),
+    } as any;
+  });
 
   let insertCallCount = 0;
   vi.mocked(db.insert).mockImplementation(() => {

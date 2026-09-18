@@ -5,10 +5,9 @@
  * Flexi Route Logistics API
  * OpenAPI spec version: 0.1.0
  */
-import type { ListShipmentsStatus } from './listShipmentsStatus';
 
 export type ListShipmentsParams = {
-status?: ListShipmentsStatus;
+status?: string;
 search?: string;
 customerId?: number;
 driverId?: number;

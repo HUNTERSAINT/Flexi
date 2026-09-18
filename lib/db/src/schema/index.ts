@@ -1,5 +1,6 @@
 export * from "./users";
 export * from "./shipments";
+export * from "./shipmentStatuses";
 export * from "./payments";
 export * from "./drivers";
 export * from "./notifications";

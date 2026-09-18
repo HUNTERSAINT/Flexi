@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ShipmentStatus {
-  id: number;
-  value: string;
+export interface ShipmentStatusInput {
+  /**
+     * @minLength 2
+     * @maxLength 60
+     */
   label: string;
-  isSystem: boolean;
-  createdAt: Date;
 }

@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedAdminUser, seedPricing, seedWallets } from "./lib/seed";
+import { seedAdminUser, seedPricing, seedShipmentStatuses, seedWallets } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -23,7 +23,7 @@ function startServer() {
     // Do not block the HTTP listener on database initialization. Railway's
     // startup probe needs a response while the database is connecting and
     // seed data is being prepared.
-    void Promise.all([seedAdminUser(), seedWallets(), seedPricing()])
+    void Promise.all([seedAdminUser(), seedWallets(), seedPricing(), seedShipmentStatuses()])
       .then(() => {
         logger.info("Database seed completed");
       })

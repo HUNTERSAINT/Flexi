@@ -86,19 +86,6 @@ export interface UserListResponse {
   limit: number;
 }
 
-export type ShipmentStatus = typeof ShipmentStatus[keyof typeof ShipmentStatus];
-
-
-export const ShipmentStatus = {
-  pending: 'pending',
-  confirmed: 'confirmed',
-  processing: 'processing',
-  in_transit: 'in_transit',
-  out_for_delivery: 'out_for_delivery',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
-} as const;
-
 export type ShipmentServiceType = typeof ShipmentServiceType[keyof typeof ShipmentServiceType];
 
 
@@ -123,7 +110,7 @@ export interface Shipment {
   driverEmail?: string | null;
   /** @nullable */
   driverPhone?: string | null;
-  status: ShipmentStatus;
+  status: string;
   serviceType: ShipmentServiceType;
   originAddress: string;
   originCity?: string;
@@ -265,21 +252,8 @@ export interface GuestShipmentResponse {
   receiverPays: boolean;
 }
 
-export type ShipmentUpdateStatus = typeof ShipmentUpdateStatus[keyof typeof ShipmentUpdateStatus];
-
-
-export const ShipmentUpdateStatus = {
-  pending: 'pending',
-  confirmed: 'confirmed',
-  processing: 'processing',
-  in_transit: 'in_transit',
-  out_for_delivery: 'out_for_delivery',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
-} as const;
-
 export interface ShipmentUpdate {
-  status?: ShipmentUpdateStatus;
+  status?: string;
   /** @nullable */
   driverId?: number | null;
   estimatedDelivery?: string;
@@ -306,23 +280,26 @@ export interface ProofUpload {
   notes?: string;
 }
 
-export type TrackingEventInputStatus = typeof TrackingEventInputStatus[keyof typeof TrackingEventInputStatus];
-
-
-export const TrackingEventInputStatus = {
-  pending: 'pending',
-  confirmed: 'confirmed',
-  processing: 'processing',
-  in_transit: 'in_transit',
-  out_for_delivery: 'out_for_delivery',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
-} as const;
-
 export interface TrackingEventInput {
-  status: TrackingEventInputStatus;
+  status: string;
   location?: string;
   description: string;
+}
+
+export interface ShipmentStatus {
+  id: number;
+  value: string;
+  label: string;
+  isSystem: boolean;
+  createdAt: string;
+}
+
+export interface ShipmentStatusInput {
+  /**
+     * @minLength 2
+     * @maxLength 60
+     */
+  label: string;
 }
 
 export interface PublicTrackingInfo {
@@ -522,26 +499,13 @@ export const ListUsersRole = {
 } as const;
 
 export type ListShipmentsParams = {
-status?: ListShipmentsStatus;
+status?: string;
 search?: string;
 customerId?: number;
 driverId?: number;
 page?: number;
 limit?: number;
 };
-
-export type ListShipmentsStatus = typeof ListShipmentsStatus[keyof typeof ListShipmentsStatus];
-
-
-export const ListShipmentsStatus = {
-  pending: 'pending',
-  confirmed: 'confirmed',
-  processing: 'processing',
-  in_transit: 'in_transit',
-  out_for_delivery: 'out_for_delivery',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
-} as const;
 
 export type ListPaymentsParams = {
 status?: ListPaymentsStatus;
@@ -572,3 +536,4 @@ status?: string;
 export type ListNotificationsParams = {
 isRead?: boolean;
 };
+

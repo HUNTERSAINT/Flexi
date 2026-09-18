@@ -1,10 +1,74 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { db, usersTable, shipmentsTable, paymentsTable } from "@workspace/db";
-import { eq, count, sum, and, gte } from "drizzle-orm";
+import { db, usersTable, shipmentsTable, paymentsTable, shipmentStatusesTable } from "@workspace/db";
+import { eq, count, sum, gte, desc, asc } from "drizzle-orm";
 import { requireRole } from "../middlewares/auth";
+import { DEFAULT_SHIPMENT_STATUSES } from "../lib/seed";
 
 const router = Router();
+
+function slugifyStatusLabel(label: string) {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60);
+}
+
+// GET /api/admin/statuses — list system and custom shipment statuses
+router.get("/admin/statuses", requireRole("admin"), async (req, res) => {
+  try {
+    const statuses = await db
+      .select()
+      .from(shipmentStatusesTable)
+      .orderBy(desc(shipmentStatusesTable.isSystem), asc(shipmentStatusesTable.createdAt));
+    res.json(statuses);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/admin/statuses — add a custom shipment status
+router.post("/admin/statuses", requireRole("admin"), async (req, res) => {
+  try {
+    const label = typeof req.body?.label === "string" ? req.body.label.trim() : "";
+    if (!label) {
+      res.status(400).json({ error: "Status label is required" });
+      return;
+    }
+    if (label.length > 60) {
+      res.status(400).json({ error: "Status label must be 60 characters or fewer" });
+      return;
+    }
+
+    const value = slugifyStatusLabel(label);
+    if (value.length < 2) {
+      res.status(400).json({ error: "Status label must contain at least two letters or numbers" });
+      return;
+    }
+
+    const existing = await db
+      .select({ id: shipmentStatusesTable.id })
+      .from(shipmentStatusesTable)
+      .where(eq(shipmentStatusesTable.value, value))
+      .limit(1);
+    if (existing.length > 0) {
+      res.status(409).json({ error: "A status with this name already exists" });
+      return;
+    }
+
+    const [status] = await db
+      .insert(shipmentStatusesTable)
+      .values({ value, label, isSystem: false })
+      .returning();
+    res.status(201).json(status);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // GET /api/admin/analytics
 router.get("/admin/analytics", requireRole("admin"), async (req, res) => {

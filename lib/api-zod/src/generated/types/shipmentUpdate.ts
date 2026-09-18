@@ -5,10 +5,9 @@
  * Flexi Route Logistics API
  * OpenAPI spec version: 0.1.0
  */
-import type { ShipmentUpdateStatus } from './shipmentUpdateStatus';
 
 export interface ShipmentUpdate {
-  status?: ShipmentUpdateStatus;
+  status?: string;
   /** @nullable */
   driverId?: number | null;
   estimatedDelivery?: Date;

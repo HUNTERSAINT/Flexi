@@ -3,16 +3,6 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
 
-export const shipmentStatusEnum = pgEnum("shipment_status", [
-  "pending",
-  "confirmed",
-  "processing",
-  "in_transit",
-  "out_for_delivery",
-  "delivered",
-  "cancelled",
-]);
-
 export const serviceTypeEnum = pgEnum("service_type", [
   "standard",
   "express",
@@ -28,7 +18,8 @@ export const shipmentsTable = pgTable("shipments", {
     .references(() => usersTable.id),
   driverId: integer("driver_id").references(() => usersTable.id),
   serviceType: serviceTypeEnum("service_type").notNull().default("standard"),
-  status: shipmentStatusEnum("status").notNull().default("pending"),
+  // Status values are backed by shipmentStatusesTable so admins can add custom statuses.
+  status: text("status").notNull().default("pending"),
   // Origin
   originAddress: text("origin_address").notNull(),
   originCity: text("origin_city").notNull(),

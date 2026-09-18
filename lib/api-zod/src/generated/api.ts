@@ -15,6 +15,7 @@ export const HealthCheckResponse = zod.object({
   "status": zod.string()
 })
 
+
 /**
  * @summary Register a new customer
  */
@@ -79,6 +80,8 @@ export const GetMeResponse = zod.object({
   "isActive": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
+
+
 /**
  * @summary Change current user password
  */
@@ -188,7 +191,7 @@ export const listShipmentsQueryPageDefault = 1;
 export const listShipmentsQueryLimitDefault = 20;
 
 export const ListShipmentsQueryParams = zod.object({
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']).optional(),
+  "status": zod.coerce.string().optional(),
   "search": zod.coerce.string().optional(),
   "customerId": zod.coerce.number().int().optional(),
   "driverId": zod.coerce.number().int().optional(),
@@ -206,7 +209,7 @@ export const ListShipmentsResponse = zod.object({
   "driverName": zod.string().nullish(),
   "driverEmail": zod.string().nullish(),
   "driverPhone": zod.string().nullish(),
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
   "originCity": zod.string().optional(),
@@ -262,7 +265,7 @@ export const CreateShipmentResponse = zod.object({
   "driverName": zod.string().nullish(),
   "driverEmail": zod.string().nullish(),
   "driverPhone": zod.string().nullish(),
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
   "originCity": zod.string().optional(),
@@ -337,7 +340,7 @@ export const GetShipmentResponse = zod.object({
   "driverName": zod.string().nullish(),
   "driverEmail": zod.string().nullish(),
   "driverPhone": zod.string().nullish(),
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
   "originCity": zod.string().optional(),
@@ -389,7 +392,7 @@ export const UpdateShipmentParams = zod.object({
 })
 
 export const UpdateShipmentBody = zod.object({
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']).optional(),
+  "status": zod.string().optional(),
   "driverId": zod.int().nullish(),
   "estimatedDelivery": zod.coerce.date().optional(),
   "totalAmount": zod.number().optional(),
@@ -406,7 +409,7 @@ export const UpdateShipmentResponse = zod.object({
   "driverName": zod.string().nullish(),
   "driverEmail": zod.string().nullish(),
   "driverPhone": zod.string().nullish(),
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
   "originCity": zod.string().optional(),
@@ -459,7 +462,7 @@ export const AssignDriverResponse = zod.object({
   "driverName": zod.string().nullish(),
   "driverEmail": zod.string().nullish(),
   "driverPhone": zod.string().nullish(),
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
   "originCity": zod.string().optional(),
@@ -506,7 +509,7 @@ export const AddTrackingEventParams = zod.object({
 })
 
 export const AddTrackingEventBody = zod.object({
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "location": zod.string().optional(),
   "description": zod.string()
 })
@@ -542,7 +545,7 @@ export const UploadDeliveryProofResponse = zod.object({
   "driverName": zod.string().nullish(),
   "driverEmail": zod.string().nullish(),
   "driverPhone": zod.string().nullish(),
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
   "originCity": zod.string().optional(),
@@ -903,7 +906,7 @@ export const GetMyDeliveriesResponseItem = zod.object({
   "driverName": zod.string().nullish(),
   "driverEmail": zod.string().nullish(),
   "driverPhone": zod.string().nullish(),
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
   "originCity": zod.string().optional(),
@@ -995,7 +998,7 @@ export const GetAdminAnalyticsResponse = zod.object({
   "driverName": zod.string().nullish(),
   "driverEmail": zod.string().nullish(),
   "driverPhone": zod.string().nullish(),
-  "status": zod.enum(['pending', 'confirmed', 'processing', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled']),
+  "status": zod.string(),
   "serviceType": zod.enum(['standard', 'express', 'overnight', 'freight']),
   "originAddress": zod.string(),
   "originCity": zod.string().optional(),
@@ -1020,6 +1023,40 @@ export const GetAdminAnalyticsResponse = zod.object({
   "confirmed": zod.int(),
   "rejected": zod.int()
 })
+})
+
+
+/**
+ * @summary List shipment statuses
+ */
+export const ListShipmentStatusesResponseItem = zod.object({
+  "id": zod.int(),
+  "value": zod.string(),
+  "label": zod.string(),
+  "isSystem": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListShipmentStatusesResponse = zod.array(ListShipmentStatusesResponseItem)
+
+
+/**
+ * @summary Add a custom shipment status
+ */
+export const createShipmentStatusBodyLabelMin = 2;
+export const createShipmentStatusBodyLabelMax = 60;
+
+
+
+export const CreateShipmentStatusBody = zod.object({
+  "label": zod.string().min(createShipmentStatusBodyLabelMin).max(createShipmentStatusBodyLabelMax)
+})
+
+export const CreateShipmentStatusResponse = zod.object({
+  "id": zod.int(),
+  "value": zod.string(),
+  "label": zod.string(),
+  "isSystem": zod.boolean(),
+  "createdAt": zod.coerce.date()
 })
 
 
@@ -1063,3 +1100,5 @@ export const UpdatePricingResponse = zod.object({
   "description": zod.string().optional(),
   "createdAt": zod.coerce.date()
 })
+
+

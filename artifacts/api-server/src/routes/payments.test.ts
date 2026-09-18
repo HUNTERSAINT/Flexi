@@ -49,6 +49,10 @@ vi.mock("@workspace/db", () => {
       customerId: "shipments.customerId",
       status: "shipments.status",
     },
+    shipmentStatusesTable: {
+      id: "shipment_statuses.id",
+      value: "shipment_statuses.value",
+    },
     eq: vi.fn((_col: unknown, _val: unknown) => "eq-expr"),
     and: vi.fn((...args: unknown[]) => args),
     count: vi.fn(() => ({ as: vi.fn() })),

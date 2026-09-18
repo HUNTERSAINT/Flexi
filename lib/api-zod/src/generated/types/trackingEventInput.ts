@@ -5,10 +5,9 @@
  * Flexi Route Logistics API
  * OpenAPI spec version: 0.1.0
  */
-import type { TrackingEventInputStatus } from './trackingEventInputStatus';
 
 export interface TrackingEventInput {
-  status: TrackingEventInputStatus;
+  status: string;
   location?: string;
   description: string;
 }

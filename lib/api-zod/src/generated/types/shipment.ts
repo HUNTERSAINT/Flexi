@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ShipmentServiceType } from './shipmentServiceType';
-import type { ShipmentStatus } from './shipmentStatus';
 
 export interface Shipment {
   id: number;
@@ -22,7 +21,7 @@ export interface Shipment {
   driverEmail?: string | null;
   /** @nullable */
   driverPhone?: string | null;
-  status: ShipmentStatus;
+  status: string;
   serviceType: ShipmentServiceType;
   originAddress: string;
   originCity?: string;

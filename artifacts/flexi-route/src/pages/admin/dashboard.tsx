@@ -31,6 +31,7 @@ export default function AdminDashboard() {
       case 'processing': return '#3b82f6'; // blue-500
       case 'in_transit': return '#0ea5e9'; // sky-500
       case 'out_for_delivery': return '#6366f1'; // indigo-500
+      case 'arrived_at_location': return '#a855f7'; // purple-500
       case 'delivered': return '#10b981'; // emerald-500
       case 'cancelled': return '#ef4444'; // red-500
       default: return '#94a3b8'; // slate-400

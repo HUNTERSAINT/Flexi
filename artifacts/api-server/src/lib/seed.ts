@@ -1,11 +1,34 @@
 import bcrypt from "bcryptjs";
-import { db, pricingTable, usersTable, walletsTable } from "@workspace/db";
+import { db, pricingTable, shipmentStatusesTable, usersTable, walletsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 
 const ADMIN_EMAIL = "nkingsley130@gmail.com";
 const ADMIN_PASSWORD = "admin134";
 const ADMIN_NAME = "Admin";
+
+export const DEFAULT_SHIPMENT_STATUSES = [
+  { value: "pending", label: "Pending" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "processing", label: "Processing" },
+  { value: "in_transit", label: "In Transit" },
+  { value: "out_for_delivery", label: "Out for Delivery" },
+  { value: "arrived_at_location", label: "Arrived at location" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+] as const;
+
+export async function seedShipmentStatuses(): Promise<void> {
+  try {
+    for (const status of DEFAULT_SHIPMENT_STATUSES) {
+      await db.insert(shipmentStatusesTable).values({ ...status, isSystem: true }).onConflictDoNothing({
+        target: shipmentStatusesTable.value,
+      });
+    }
+  } catch (err) {
+    logger.error({ err }, "Could not seed shipment statuses");
+  }
+}
 
 /**
  * Ensures the owner admin account exists and has the correct role + password.

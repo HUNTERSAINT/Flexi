@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import bcrypt from "bcryptjs";
-import { db, pricingTable, shipmentsTable, trackingEventsTable, paymentsTable, usersTable, driversTable } from "@workspace/db";
+import { db, pricingTable, shipmentsTable, shipmentStatusesTable, trackingEventsTable, paymentsTable, usersTable, driversTable } from "@workspace/db";
 import { eq, and, ilike, or, count, desc, SQL } from "drizzle-orm";
 import { requireAuth, requireRole, signToken } from "../middlewares/auth";
 import { generateTrackingNumber } from "../lib/trackingNumber";
@@ -465,6 +465,17 @@ router.patch("/shipments/:id", requireRole("admin", "driver"), async (req, res) 
       res.status(403).json({ error: "Only admins can set a historical status time" });
       return;
     }
+    if (status !== undefined) {
+      const [knownStatus] = await db
+        .select({ id: shipmentStatusesTable.id })
+        .from(shipmentStatusesTable)
+        .where(eq(shipmentStatusesTable.value, String(status)))
+        .limit(1);
+      if (!knownStatus) {
+        res.status(400).json({ error: "Please select a valid shipment status" });
+        return;
+      }
+    }
 
     let statusEventDate = new Date();
     if (statusUpdatedAt !== undefined) {
@@ -618,6 +629,12 @@ router.post("/shipments/:id/events", requireRole("admin", "driver"), async (req,
     const id = parseInt(String(req.params.id), 10);
     const { status, location, description } = req.body;
     if (!status || !description) { res.status(400).json({ error: "status and description are required" }); return; }
+    const [knownStatus] = await db
+      .select({ id: shipmentStatusesTable.id })
+      .from(shipmentStatusesTable)
+      .where(eq(shipmentStatusesTable.value, String(status)))
+      .limit(1);
+    if (!knownStatus) { res.status(400).json({ error: "Please select a valid shipment status" }); return; }
     const [event] = await db.insert(trackingEventsTable).values({ shipmentId: id, status, location, description }).returning();
     const [shipment] = await db.update(shipmentsTable).set({ status, updatedAt: new Date() }).where(eq(shipmentsTable.id, id)).returning();
     if (shipment) await createNotification(shipment.customerId, "Shipment Update", description, "shipment_update", id);
