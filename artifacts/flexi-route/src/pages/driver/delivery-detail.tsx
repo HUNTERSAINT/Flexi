@@ -190,6 +190,7 @@ function UpdateStatusPanel({ shipment }: { shipment: any }) {
                 <SelectItem value="processing">Processing</SelectItem>
                 <SelectItem value="in_transit">In Transit</SelectItem>
                 <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+                <SelectItem value="arrived_at_location">Arrived at location</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
               </SelectContent>
             </Select>

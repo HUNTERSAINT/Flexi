@@ -188,6 +188,7 @@ const STATUS_LABELS: Record<string, string> = {
   processing: "Processing",
   in_transit: "In Transit",
   out_for_delivery: "Out for Delivery",
+  arrived_at_location: "Arrived at location",
   delivered: "Delivered",
   cancelled: "Cancelled",
 };
@@ -197,6 +198,7 @@ const STATUS_ICONS: Record<string, string> = {
   processing: "🔄",
   in_transit: "🚛",
   out_for_delivery: "🏃",
+  arrived_at_location: "📍",
   delivered: "🎉",
   cancelled: "❌",
 };

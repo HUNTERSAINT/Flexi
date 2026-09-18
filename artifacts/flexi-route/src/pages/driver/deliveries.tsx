@@ -11,7 +11,7 @@ export default function DriverDeliveries() {
   const [statusFilter, setStatusFilter] = useState<string>('active');
 
   const { data: deliveriesResponse, isLoading } = useGetMyDeliveries({
-    status: statusFilter === 'active' ? 'processing,in_transit,out_for_delivery' : 
+    status: statusFilter === 'active' ? 'processing,in_transit,out_for_delivery,arrived_at_location' : 
             statusFilter === 'completed' ? 'delivered' : undefined
   });
 
