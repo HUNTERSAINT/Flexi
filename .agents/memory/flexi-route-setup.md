@@ -17,6 +17,14 @@ description: Bootstrap decisions, DB schema notes, and feature implementation de
 
 **How to apply:** When changing Railway commands or workspace manifests, verify the filtered build locally, confirm `/api/healthz` returns 200, and query the Railway service instance before redeploying.
 
+## GitHub and Railway operations
+- For this repository, authenticate Git pushes with the GitHub token in an `x-access-token` HTTPS URL; the equivalent Git extra-header form was rejected even though the token worked with the GitHub API.
+- Railway deployment status can be queried through its GraphQL API using the project and service IDs documented in `RAILWAY.md`.
+
+**Why:** The imported repository can be ahead or behind the local project checkpoint, and Railway deploys both the API and frontend from the same Git push.
+
+**How to apply:** Fetch the remote branch before pushing to avoid overwriting newer Flexi commits, then monitor the latest API Server and Frontend deployments until both reach a terminal status.
+
 ## CSS color theme
 - Primary: orange `25 95% 53%`
 - Secondary (sidebar/nav): dark navy `222 47% 11%`
