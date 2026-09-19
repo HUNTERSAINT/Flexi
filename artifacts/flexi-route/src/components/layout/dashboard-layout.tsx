@@ -16,7 +16,8 @@ import {
   DollarSign,
   Settings,
   Shield,
-  Wallet
+  Wallet,
+  Inbox
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getListNotificationsQueryKey, useListNotifications } from '@workspace/api-client-react';
@@ -31,6 +32,7 @@ const CUSTOMER_NAV = [
 
 const ADMIN_NAV = [
   { href: '/admin', label: 'Analytics', icon: LayoutDashboard },
+  { href: '/admin/inbox', label: 'Inbox', icon: Inbox },
   { href: '/admin/shipments', label: 'Shipments', icon: PackageSearch },
   { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/drivers', label: 'Drivers', icon: Truck },

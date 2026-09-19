@@ -26,12 +26,17 @@ import type {
   DriverAssignment,
   DriverInput,
   DriverUpdate,
+  Email,
+  EmailThread,
+  EmailThreadListResponse,
+  EmailWebhookPayload,
   ErrorResponse,
   GetMyDeliveriesParams,
   GuestShipmentInput,
   GuestShipmentResponse,
   HealthStatus,
   ListDriversParams,
+  ListEmailThreadsParams,
   ListNotificationsParams,
   ListPaymentsParams,
   ListShipmentsParams,
@@ -46,6 +51,7 @@ import type {
   PricingUpdate,
   ProofUpload,
   PublicTrackingInfo,
+  SendEmailRequest,
   Shipment,
   ShipmentDetail,
   ShipmentInput,
@@ -3171,5 +3177,380 @@ export const useUpdatePricing = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdatePricingMutationOptions(options));
+    }
+
+export const getSendEmailUrl = () => {
+
+
+
+
+  return `/api/emails/send`
+}
+
+/**
+ * @summary Send an outbound email through Resend (admin only)
+ */
+export const sendEmail = async (sendEmailRequest: SendEmailRequest, options?: Parameters<typeof customFetch>[1]): Promise<Email> => {
+
+  return customFetch<Email>(getSendEmailUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sendEmailRequest)
+  }
+);}
+
+
+
+
+
+export const getSendEmailMutationOptions = <TError = ErrorType<ErrorResponse | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendEmail>>, TError,{data: BodyType<SendEmailRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendEmail>>, TError,{data: BodyType<SendEmailRequest>}, TContext> => {
+
+const mutationKey = ['sendEmail'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendEmail>>, {data: BodyType<SendEmailRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendEmail(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendEmailMutationResult = NonNullable<Awaited<ReturnType<typeof sendEmail>>>
+    export type SendEmailMutationBody = BodyType<SendEmailRequest>
+    export type SendEmailMutationError = ErrorType<ErrorResponse | void>
+
+    /**
+ * @summary Send an outbound email through Resend (admin only)
+ */
+export const useSendEmail = <TError = ErrorType<ErrorResponse | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendEmail>>, TError,{data: BodyType<SendEmailRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendEmail>>,
+        TError,
+        {data: BodyType<SendEmailRequest>},
+        TContext
+      > => {
+      return useMutation(getSendEmailMutationOptions(options));
+    }
+
+export const getListEmailThreadsUrl = (params?: ListEmailThreadsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/emails/threads?${stringifiedParams}` : `/api/emails/threads`
+}
+
+/**
+ * @summary List email conversations (admin only)
+ */
+export const listEmailThreads = async (params?: ListEmailThreadsParams, options?: Parameters<typeof customFetch>[1]): Promise<EmailThreadListResponse> => {
+
+  return customFetch<EmailThreadListResponse>(getListEmailThreadsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListEmailThreadsQueryKey = (params?: ListEmailThreadsParams,) => {
+    return [
+    `/api/emails/threads`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListEmailThreadsQueryOptions = <TData = Awaited<ReturnType<typeof listEmailThreads>>, TError = ErrorType<unknown>>(params?: ListEmailThreadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEmailThreads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEmailThreadsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEmailThreads>>> = ({ signal }) => listEmailThreads(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEmailThreads>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListEmailThreadsQueryResult = NonNullable<Awaited<ReturnType<typeof listEmailThreads>>>
+export type ListEmailThreadsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List email conversations (admin only)
+ */
+
+export function useListEmailThreads<TData = Awaited<ReturnType<typeof listEmailThreads>>, TError = ErrorType<unknown>>(
+ params?: ListEmailThreadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listEmailThreads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListEmailThreadsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetEmailThreadUrl = (threadId: string,) => {
+
+
+
+
+  return `/api/emails/threads/${threadId}`
+}
+
+/**
+ * @summary Get every message in a conversation (admin only)
+ */
+export const getEmailThread = async (threadId: string, options?: Parameters<typeof customFetch>[1]): Promise<EmailThread> => {
+
+  return customFetch<EmailThread>(getGetEmailThreadUrl(threadId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEmailThreadQueryKey = (threadId: string,) => {
+    return [
+    `/api/emails/threads/${threadId}`
+    ] as const;
+    }
+
+
+export const getGetEmailThreadQueryOptions = <TData = Awaited<ReturnType<typeof getEmailThread>>, TError = ErrorType<ErrorResponse>>(threadId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEmailThread>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEmailThreadQueryKey(threadId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEmailThread>>> = ({ signal }) => getEmailThread(threadId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: threadId !== null && threadId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEmailThread>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEmailThreadQueryResult = NonNullable<Awaited<ReturnType<typeof getEmailThread>>>
+export type GetEmailThreadQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get every message in a conversation (admin only)
+ */
+
+export function useGetEmailThread<TData = Awaited<ReturnType<typeof getEmailThread>>, TError = ErrorType<ErrorResponse>>(
+ threadId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEmailThread>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEmailThreadQueryOptions(threadId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getMarkEmailThreadReadUrl = (threadId: string,) => {
+
+
+
+
+  return `/api/emails/threads/${threadId}`
+}
+
+/**
+ * @summary Mark a conversation as read (admin only)
+ */
+export const markEmailThreadRead = async (threadId: string, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getMarkEmailThreadReadUrl(threadId),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+
+export const getMarkEmailThreadReadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markEmailThreadRead>>, TError,{threadId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markEmailThreadRead>>, TError,{threadId: string}, TContext> => {
+
+const mutationKey = ['markEmailThreadRead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markEmailThreadRead>>, {threadId: string}> = (props) => {
+          const {threadId} = props ?? {};
+
+          return  markEmailThreadRead(threadId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkEmailThreadReadMutationResult = NonNullable<Awaited<ReturnType<typeof markEmailThreadRead>>>
+
+    export type MarkEmailThreadReadMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark a conversation as read (admin only)
+ */
+export const useMarkEmailThreadRead = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markEmailThreadRead>>, TError,{threadId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markEmailThreadRead>>,
+        TError,
+        {threadId: string},
+        TContext
+      > => {
+      return useMutation(getMarkEmailThreadReadMutationOptions(options));
+    }
+
+export const getReceiveEmailWebhookUrl = () => {
+
+
+
+
+  return `/api/emails/webhook`
+}
+
+/**
+ * Verifies the Resend webhook signature, retrieves the full message, and stores it.
+ * @summary Receive Resend email.received webhooks
+ */
+export const receiveEmailWebhook = async (emailWebhookPayload: EmailWebhookPayload, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getReceiveEmailWebhookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(emailWebhookPayload)
+  }
+);}
+
+
+
+
+
+export const getReceiveEmailWebhookMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveEmailWebhook>>, TError,{data: BodyType<EmailWebhookPayload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receiveEmailWebhook>>, TError,{data: BodyType<EmailWebhookPayload>}, TContext> => {
+
+const mutationKey = ['receiveEmailWebhook'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receiveEmailWebhook>>, {data: BodyType<EmailWebhookPayload>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  receiveEmailWebhook(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceiveEmailWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof receiveEmailWebhook>>>
+    export type ReceiveEmailWebhookMutationBody = BodyType<EmailWebhookPayload>
+    export type ReceiveEmailWebhookMutationError = ErrorType<void>
+
+    /**
+ * @summary Receive Resend email.received webhooks
+ */
+export const useReceiveEmailWebhook = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveEmailWebhook>>, TError,{data: BodyType<EmailWebhookPayload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof receiveEmailWebhook>>,
+        TError,
+        {data: BodyType<EmailWebhookPayload>},
+        TContext
+      > => {
+      return useMutation(getReceiveEmailWebhookMutationOptions(options));
     }
 

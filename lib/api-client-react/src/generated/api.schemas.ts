@@ -17,6 +17,80 @@ export interface SuccessResponse {
   message: string;
 }
 
+export interface SendEmailRequest {
+  to: string;
+  /**
+     * @minLength 1
+     * @maxLength 998
+     */
+  subject: string;
+  /** @minLength 1 */
+  body: string;
+  inReplyTo?: string;
+  threadId?: string;
+}
+
+export type EmailDirection = typeof EmailDirection[keyof typeof EmailDirection];
+
+
+export const EmailDirection = {
+  inbound: 'inbound',
+  outbound: 'outbound',
+} as const;
+
+export interface EmailAttachment {
+  filename: string;
+  contentType: string;
+  /** @nullable */
+  url?: string | null;
+  /** @nullable */
+  storagePath?: string | null;
+}
+
+export interface Email {
+  id: number;
+  /** @nullable */
+  resendEmailId?: string | null;
+  direction: EmailDirection;
+  fromAddress: string;
+  toAddress: string;
+  subject: string;
+  /** @nullable */
+  bodyHtml: string | null;
+  /** @nullable */
+  bodyText: string | null;
+  /** @nullable */
+  messageId?: string | null;
+  /** @nullable */
+  inReplyTo?: string | null;
+  threadId?: string;
+  attachments?: EmailAttachment[];
+  status: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface EmailThreadSummary {
+  threadId: string;
+  subject: string;
+  participants: string[];
+  latestEmail: Email;
+  unreadCount: number;
+  messageCount: number;
+  lastActivityAt: string;
+}
+
+export interface EmailThreadListResponse {
+  data: EmailThreadSummary[];
+}
+
+export interface EmailThread {
+  threadId: string;
+  messages: Email[];
+}
+
+export interface EmailWebhookPayload { [key: string]: unknown }
+
 export interface UserRegistration {
   /** @minLength 2 */
   name: string;
@@ -535,5 +609,14 @@ status?: string;
 
 export type ListNotificationsParams = {
 isRead?: boolean;
+};
+
+export type ListEmailThreadsParams = {
+search?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };
 

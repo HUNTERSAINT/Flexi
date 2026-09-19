@@ -28,6 +28,8 @@ tags:
     description: Public shipment tracking
   - name: pricing
     description: Pricing management
+  - name: emails
+    description: Resend-powered admin email inbox
 
 paths:
   /healthz:
@@ -1011,6 +1013,134 @@ paths:
               schema:
                 $ref: "#/components/schemas/Pricing"
 
+  # --- EMAIL INBOX ---
+  /emails/send:
+    post:
+      operationId: sendEmail
+      tags: [emails]
+      summary: Send an outbound email through Resend (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendEmailRequest"
+      responses:
+        "201":
+          description: Email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+        "502":
+          description: Resend error
+
+  /emails/threads:
+    get:
+      operationId: listEmailThreads
+      tags: [emails]
+      summary: List email conversations (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Email conversations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailThreadListResponse"
+
+  /emails/threads/{threadId}:
+    get:
+      operationId: getEmailThread
+      tags: [emails]
+      summary: Get every message in a conversation (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailThread"
+        "404":
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: markEmailThreadRead
+      tags: [emails]
+      summary: Mark a conversation as read (admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Conversation marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /emails/webhook:
+    post:
+      operationId: receiveEmailWebhook
+      tags: [emails]
+      summary: Receive Resend email.received webhooks
+      description: Verifies the Resend webhook signature, retrieves the full message, and stores it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailWebhookPayload"
+      responses:
+        "200":
+          description: Webhook accepted
+        "400":
+          description: Invalid webhook
+        "401":
+          description: Invalid webhook signature
+        "500":
+          description: Processing error
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1042,6 +1172,133 @@ components:
           type: string
       required:
         - message
+
+    SendEmailRequest:
+      type: object
+      required: [to, subject, body]
+      properties:
+        to:
+          type: string
+          format: email
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 998
+        body:
+          type: string
+          minLength: 1
+        inReplyTo:
+          type: string
+        threadId:
+          type: string
+
+    Email:
+      type: object
+      required:
+        - id
+        - direction
+        - fromAddress
+        - toAddress
+        - subject
+        - bodyHtml
+        - bodyText
+        - status
+        - isRead
+        - createdAt
+      properties:
+        id:
+          type: integer
+        resendEmailId:
+          type: ["string", "null"]
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+        subject:
+          type: string
+        bodyHtml:
+          type: ["string", "null"]
+        bodyText:
+          type: ["string", "null"]
+        messageId:
+          type: ["string", "null"]
+        inReplyTo:
+          type: ["string", "null"]
+        threadId:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAttachment"
+        status:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    EmailAttachment:
+      type: object
+      required: [filename, contentType]
+      properties:
+        filename:
+          type: string
+        contentType:
+          type: string
+        url:
+          type: ["string", "null"]
+        storagePath:
+          type: ["string", "null"]
+
+    EmailThreadSummary:
+      type: object
+      required: [threadId, subject, participants, latestEmail, unreadCount, messageCount, lastActivityAt]
+      properties:
+        threadId:
+          type: string
+        subject:
+          type: string
+        participants:
+          type: array
+          items:
+            type: string
+        latestEmail:
+          $ref: "#/components/schemas/Email"
+        unreadCount:
+          type: integer
+        messageCount:
+          type: integer
+        lastActivityAt:
+          type: string
+          format: date-time
+
+    EmailThreadListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailThreadSummary"
+
+    EmailThread:
+      type: object
+      required: [threadId, messages]
+      properties:
+        threadId:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Email"
+
+    EmailWebhookPayload:
+      type: object
+      additionalProperties: true
 
     # --- AUTH SCHEMAS ---
     UserRegistration:

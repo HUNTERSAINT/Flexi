@@ -1102,3 +1102,145 @@ export const UpdatePricingResponse = zod.object({
 })
 
 
+/**
+ * @summary Send an outbound email through Resend (admin only)
+ */
+export const sendEmailBodySubjectMax = 998;
+
+
+
+
+export const SendEmailBody = zod.object({
+  "to": zod.email(),
+  "subject": zod.string().min(1).max(sendEmailBodySubjectMax),
+  "body": zod.string().min(1),
+  "inReplyTo": zod.string().optional(),
+  "threadId": zod.string().optional()
+})
+
+export const SendEmailResponse = zod.object({
+  "id": zod.int(),
+  "resendEmailId": zod.string().nullish(),
+  "direction": zod.enum(['inbound', 'outbound']),
+  "fromAddress": zod.string(),
+  "toAddress": zod.string(),
+  "subject": zod.string(),
+  "bodyHtml": zod.string().nullable(),
+  "bodyText": zod.string().nullable(),
+  "messageId": zod.string().nullish(),
+  "inReplyTo": zod.string().nullish(),
+  "threadId": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "filename": zod.string(),
+  "contentType": zod.string(),
+  "url": zod.string().nullish(),
+  "storagePath": zod.string().nullish()
+})).optional(),
+  "status": zod.string(),
+  "isRead": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List email conversations (admin only)
+ */
+export const listEmailThreadsQueryLimitDefault = 50;
+export const listEmailThreadsQueryLimitMax = 100;
+
+
+
+export const ListEmailThreadsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().int().min(1).max(listEmailThreadsQueryLimitMax).default(listEmailThreadsQueryLimitDefault)
+})
+
+export const ListEmailThreadsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "threadId": zod.string(),
+  "subject": zod.string(),
+  "participants": zod.array(zod.string()),
+  "latestEmail": zod.object({
+  "id": zod.int(),
+  "resendEmailId": zod.string().nullish(),
+  "direction": zod.enum(['inbound', 'outbound']),
+  "fromAddress": zod.string(),
+  "toAddress": zod.string(),
+  "subject": zod.string(),
+  "bodyHtml": zod.string().nullable(),
+  "bodyText": zod.string().nullable(),
+  "messageId": zod.string().nullish(),
+  "inReplyTo": zod.string().nullish(),
+  "threadId": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "filename": zod.string(),
+  "contentType": zod.string(),
+  "url": zod.string().nullish(),
+  "storagePath": zod.string().nullish()
+})).optional(),
+  "status": zod.string(),
+  "isRead": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}),
+  "unreadCount": zod.int(),
+  "messageCount": zod.int(),
+  "lastActivityAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Get every message in a conversation (admin only)
+ */
+export const GetEmailThreadParams = zod.object({
+  "threadId": zod.coerce.string()
+})
+
+export const GetEmailThreadResponse = zod.object({
+  "threadId": zod.string(),
+  "messages": zod.array(zod.object({
+  "id": zod.int(),
+  "resendEmailId": zod.string().nullish(),
+  "direction": zod.enum(['inbound', 'outbound']),
+  "fromAddress": zod.string(),
+  "toAddress": zod.string(),
+  "subject": zod.string(),
+  "bodyHtml": zod.string().nullable(),
+  "bodyText": zod.string().nullable(),
+  "messageId": zod.string().nullish(),
+  "inReplyTo": zod.string().nullish(),
+  "threadId": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "filename": zod.string(),
+  "contentType": zod.string(),
+  "url": zod.string().nullish(),
+  "storagePath": zod.string().nullish()
+})).optional(),
+  "status": zod.string(),
+  "isRead": zod.boolean(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Mark a conversation as read (admin only)
+ */
+export const MarkEmailThreadReadParams = zod.object({
+  "threadId": zod.coerce.string()
+})
+
+export const MarkEmailThreadReadResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * Verifies the Resend webhook signature, retrieves the full message, and stores it.
+ * @summary Receive Resend email.received webhooks
+ */
+export const ReceiveEmailWebhookBody = zod.record(zod.string(), zod.unknown())
+
+export const ReceiveEmailWebhookResponse = zod.unknown()
+
+

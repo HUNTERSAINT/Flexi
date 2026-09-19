@@ -10,6 +10,7 @@ import Pricing from '@/pages/admin/pricing';
 import Wallets from '@/pages/admin/wallets';
 import Notifications from '@/pages/admin/notifications';
 import AdminsPage from '@/pages/admin/admins';
+import Inbox from '@/pages/admin/inbox';
 import { Route, Switch } from 'wouter';
 
 export function AdminRoutes() {
@@ -18,6 +19,7 @@ export function AdminRoutes() {
       <DashboardLayout>
         <Switch>
           <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/inbox" component={Inbox} />
           <Route path="/admin/shipments" component={Shipments} />
           <Route path="/admin/customers" component={Customers} />
           <Route path="/admin/drivers" component={Drivers} />

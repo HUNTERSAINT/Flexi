@@ -11,6 +11,7 @@ import adminRouter from "./admin";
 import pricingRouter from "./pricing";
 import walletsRouter from "./wallets";
 import trackingRouter from "./tracking";
+import emailsRouter from "./emails";
 import express from "express";
 import fs from "fs";
 
@@ -32,5 +33,6 @@ router.use(adminRouter);
 router.use(pricingRouter);
 router.use(walletsRouter);
 router.use(trackingRouter);
+router.use(emailsRouter);
 
 export default router;

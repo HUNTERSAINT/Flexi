@@ -3,6 +3,7 @@ export * from "./shipments";
 export * from "./shipmentStatuses";
 export * from "./payments";
 export * from "./drivers";
+export * from "./emails";
 export * from "./notifications";
 export * from "./trackingEvents";
 export * from "./pricing";

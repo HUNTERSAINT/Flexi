@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@replit/connectors-sdk": "^0.4.3",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "bcryptjs": "^3.0.2",
@@ -18,7 +19,10 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "pino": "^10.1.0",
-    "pino-http": "^11.0.0"
+    "pino-http": "^11.0.0",
+    "resend": "^6.9.1",
+    "svix": "^1.83.0",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
