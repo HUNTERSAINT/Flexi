@@ -1,5 +1,6 @@
 import { ReplitConnectors } from "@replit/connectors-sdk";
 import { Resend } from "resend";
+import { randomUUID } from "node:crypto";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -21,6 +22,7 @@ type ResendResponse<T> = {
 
 export type SentEmailResult = {
   id: string;
+  messageId: string;
 };
 
 export type RetrievedEmail = {
@@ -41,6 +43,8 @@ export type RetrievedEmail = {
     content_type?: string;
     contentType?: string;
     url?: string | null;
+    download_url?: string | null;
+    downloadUrl?: string | null;
     content_id?: string | null;
   }>;
 };
@@ -90,13 +94,26 @@ export async function sendEmailThroughResend(input: {
   from?: string;
   replyTo?: string;
 }): Promise<SentEmailResult> {
+  const messageId = `<${randomUUID()}@flexirouteglobal.com>`;
   const payload = {
     from: input.from || fromAddress,
     to: [input.to],
     subject: input.subject,
     text: input.body,
     html: textToHtml(input.body),
-    ...(input.replyTo ? { headers: { "In-Reply-To": input.replyTo } } : {}),
+    headers: {
+      "Message-ID": messageId,
+      ...(input.replyTo
+        ? {
+            "In-Reply-To": input.replyTo.startsWith("<")
+              ? input.replyTo
+              : `<${input.replyTo}>`,
+            References: input.replyTo.startsWith("<")
+              ? input.replyTo
+              : `<${input.replyTo}>`,
+          }
+        : {}),
+    },
   };
 
   if (resend) {
@@ -106,7 +123,7 @@ export async function sendEmailThroughResend(input: {
     if (result.error || !result.data?.id) {
       throw new Error(result.error?.message || "Resend did not return an email id");
     }
-    return result.data;
+    return { ...result.data, messageId };
   }
 
   const result = await connectorRequest<SentEmailResult>("/emails", {
@@ -116,7 +133,7 @@ export async function sendEmailThroughResend(input: {
   if (!result.id) {
     throw new Error("Resend did not return an email id");
   }
-  return result;
+  return { ...result, messageId };
 }
 
 export async function retrieveReceivedEmail(

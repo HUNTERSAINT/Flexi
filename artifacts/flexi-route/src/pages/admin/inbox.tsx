@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'wouter';
 import {
   getGetEmailThreadQueryKey,
   getListEmailThreadsQueryKey,
@@ -226,6 +227,30 @@ function MessageBubble({ email }: { email: Email }) {
           inbound ? 'rounded-tl-sm border-border/70 bg-card' : 'rounded-tr-sm border-primary/20 bg-primary/10'
         }`}>
           <p className="whitespace-pre-wrap break-words text-foreground/90">{readableBody(email) || 'This message has no text content.'}</p>
+          {email.attachments && email.attachments.length > 0 && (
+            <div className="mt-4 space-y-2 border-t border-border/70 pt-3">
+              <p className="text-xs font-semibold text-muted-foreground">
+                {email.attachments.length} {email.attachments.length === 1 ? 'attachment' : 'attachments'}
+              </p>
+              {email.attachments.map((attachment, index) => (
+                attachment.url ? (
+                  <a
+                    key={`${attachment.filename}-${index}`}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block truncate text-xs font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {attachment.filename}
+                  </a>
+                ) : (
+                  <p key={`${attachment.filename}-${index}`} className="truncate text-xs text-muted-foreground">
+                    {attachment.filename}
+                  </p>
+                )
+              ))}
+            </div>
+          )}
         </div>
         <p className={`mt-1.5 text-[11px] text-muted-foreground ${inbound ? '' : 'text-right'}`}>{address}</p>
       </div>
@@ -341,6 +366,7 @@ function ThreadDetail({
 }
 
 export default function Inbox() {
+  const { emailId } = useParams<{ emailId?: string }>();
   const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -370,9 +396,40 @@ export default function Inbox() {
   const selectedSummary = summaries.find((summary) => summary.threadId === selectedThreadId);
 
   useEffect(() => {
+    if (emailId && summaries.length > 0) {
+      const matchingThread = summaries.find(
+        (summary) => String(summary.latestEmail.id) === emailId,
+      );
+      if (matchingThread) {
+        setSelectedThreadId(matchingThread.threadId);
+      }
+    }
     if (!selectedThreadId && summaries[0]) setSelectedThreadId(summaries[0].threadId);
     if (selectedThreadId && summaries.length > 0 && !selectedSummary) setSelectedThreadId(summaries[0].threadId);
-  }, [selectedThreadId, selectedSummary, summaries]);
+  }, [emailId, selectedThreadId, selectedSummary, summaries]);
+
+  useEffect(() => {
+    if (!selectedThreadId || !selectedSummary || selectedSummary.unreadCount === 0) {
+      return;
+    }
+    markRead.mutate(
+      { threadId: selectedThreadId },
+      {
+        onSuccess: () => {
+          queryClient.setQueryData(getListEmailThreadsQueryKey(params), (previous: typeof listQuery.data) => previous
+            ? {
+                ...previous,
+                data: previous.data.map((summary) =>
+                  summary.threadId === selectedThreadId
+                    ? { ...summary, unreadCount: 0 }
+                    : summary,
+                ),
+              }
+            : previous);
+        },
+      },
+    );
+  }, [params, queryClient, selectedSummary, selectedThreadId]);
 
   const unreadCount = summaries.reduce((count, summary) => count + summary.unreadCount, 0);
 

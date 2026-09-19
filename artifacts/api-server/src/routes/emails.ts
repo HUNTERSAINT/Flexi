@@ -147,7 +147,9 @@ router.post("/emails/send", requireRole("admin"), async (req, res) => {
   }
 
   const input = parsed.data;
-  const inReplyTo = input.inReplyTo || input.in_reply_to || null;
+  const inReplyTo = normalizeMessageId(
+    input.inReplyTo || input.in_reply_to || null,
+  );
   const suppliedThreadId = input.threadId || input.thread_id || null;
 
   try {
@@ -168,7 +170,7 @@ router.post("/emails/send", requireRole("admin"), async (req, res) => {
         subject: input.subject,
         bodyHtml: null,
         bodyText: input.body,
-        messageId: null,
+        messageId: sent.messageId,
         inReplyTo,
         threadId,
         attachments: [],
@@ -366,7 +368,11 @@ router.post("/emails/webhook", async (req, res) => {
         filename: attachment.filename || "attachment",
         contentType:
           attachment.content_type || attachment.contentType || "application/octet-stream",
-        url: attachment.url || null,
+        url:
+          attachment.url ||
+          attachment.download_url ||
+          attachment.downloadUrl ||
+          null,
       }),
     );
     const [saved] = await db

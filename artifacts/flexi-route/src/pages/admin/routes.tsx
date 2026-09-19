@@ -19,6 +19,7 @@ export function AdminRoutes() {
       <DashboardLayout>
         <Switch>
           <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/inbox/:emailId" component={Inbox} />
           <Route path="/admin/inbox" component={Inbox} />
           <Route path="/admin/shipments" component={Shipments} />
           <Route path="/admin/customers" component={Customers} />
