@@ -1,0 +1,101 @@
+# Flexi Route — Railway Deployment Guide
+
+## Live URLs
+
+| Service  | URL |
+|----------|-----|
+| Frontend | https://flexirouteglobal.com (also www.) |
+| API      | https://api.flexirouteglobal.com |
+| Frontend (Railway) | https://frontend-production-2fa3.up.railway.app |
+| API (Railway)      | https://api-server-production-2c9f.up.railway.app |
+
+## Railway Project
+
+- **Project ID**: `3d50eed0-e0ed-4e8c-bc89-4b352bce0fcb`
+- **Environment ID**: `5295ca21-8245-4517-add7-d5f48de8617c`
+- **Project**: https://railway.app/project/3d50eed0-e0ed-4e8c-bc89-4b352bce0fcb
+
+## Services
+
+| Service   | Service ID |
+|-----------|-----------|
+| Postgres  | `5a149a94-c153-4f7c-aba0-100f719eccf1` |
+| API Server | `f3aa4bc7-2ddc-488c-a1c2-0ff1ceefc153` |
+| Frontend  | `c9b4c104-5ae9-4dae-b332-97e1c9615f86` |
+
+## Admin Login
+
+Admin credentials are provisioned through Railway environment variables or the
+application's secure setup flow. Never commit login credentials to this file.
+
+## Environment Variables
+
+### API Server
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | Set through the Railway Postgres service reference |
+| `SESSION_SECRET` | (set in Railway dashboard) |
+| `NODE_ENV` | `production` |
+| `APP_URL` | `https://flexirouteglobal.com` |
+| `EMAIL_FROM` | `Flexi Route <support@flexirouteglobal.com>` |
+| `RESEND_API_KEY` | (set in Railway dashboard) |
+| `PNPM_VERSION` | `10.26.1` |
+
+### Frontend
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | `https://api.flexirouteglobal.com` |
+| `NODE_ENV` | `production` |
+| `PNPM_VERSION` | `10.26.1` |
+
+### Postgres
+| Variable | Value |
+|----------|-------|
+| `POSTGRES_DB` | `railway` |
+| `POSTGRES_USER` | `postgres` |
+| `POSTGRES_PASSWORD` | Set in Railway; never commit this value |
+| `PGDATA` | `/var/lib/postgresql/data/pgdata` |
+
+## Build Commands
+
+### API Server
+- **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build`
+- **Pre-deploy**: `pnpm --filter @workspace/db exec drizzle-kit push --config ./drizzle.config.ts`
+- **Start**: `node --enable-source-maps /app/artifacts/api-server/dist/index.mjs`
+- **Healthcheck**: `/api/healthz`
+
+### Frontend
+- **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/flexi-route run build && npm install -g serve`
+- **Start**: `node /app/artifacts/flexi-route/server.mjs`
+
+## DNS (Cloudflare — Zone: flexirouteglobal.com)
+
+| Type  | Name                        | Target |
+|-------|-----------------------------|--------|
+| CNAME | flexirouteglobal.com        | frontend-production-2fa3.up.railway.app |
+| CNAME | www.flexirouteglobal.com    | frontend-production-2fa3.up.railway.app |
+| CNAME | api.flexirouteglobal.com    | api-server-production-2c9f.up.railway.app |
+
+All records are **proxied through Cloudflare** (orange cloud). SSL mode: **Full**.
+
+## Redeploying
+
+To redeploy after a code push to GitHub:
+
+```bash
+# Push code
+git push github main
+
+# Trigger redeployments via Railway API (use RAILWAY secret)
+# The Railway dashboard auto-deploys on git push if connected via GitHub trigger
+```
+
+## Notes
+
+- The service build commands explicitly use `pnpm install --no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only).
+- The `railway.json` at repo root explicitly selects Railpack. Do not add a legacy `nixpacksPlan` or `railpack.json` override.
+- The frontend is served by the dependency-free Node server in `artifacts/flexi-route/server.mjs`; do not rely on a globally installed build-stage CLI at runtime.
+- Schema migrations run in Railway's pre-deploy phase before the API process starts
+- Admin user and default wallet addresses are seeded on first startup
+- Postgres data is persisted via Railway volume at `/var/lib/postgresql/data` (PGDATA subdirectory)
+- Rotate any database or admin credentials that were previously committed to this file before deploying.

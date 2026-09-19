@@ -1,0 +1,2 @@
+- [Flexi Route setup](flexi-route-setup.md) — Full-stack logistics app; key bootstrap decisions and schema notes.
+- [Zod form validation](zod-form-validation.md) — Zod 4 needs a resolver path that reads issues directly; older resolver versions can reject instead of returning field errors.
