@@ -74,7 +74,7 @@ async function connectorRequest<T>(
   return (await response.json()) as T;
 }
 
-function textToHtml(text: string): string {
+export function textToHtml(text: string): string {
   const escaped = text
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")

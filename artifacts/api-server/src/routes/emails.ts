@@ -9,6 +9,7 @@ import {
   fromAddress,
   retrieveReceivedEmail,
   sendEmailThroughResend,
+  textToHtml,
 } from "../lib/resend";
 
 const router = Router();
@@ -168,7 +169,7 @@ router.post("/emails/send", requireRole("admin"), async (req, res) => {
         fromAddress,
         toAddress: input.to,
         subject: input.subject,
-        bodyHtml: null,
+        bodyHtml: textToHtml(input.body),
         bodyText: input.body,
         messageId: sent.messageId,
         inReplyTo,
@@ -354,11 +355,12 @@ router.post("/emails/webhook", async (req, res) => {
           getHeader(headers, "Message-Id") ||
           eventData.message_id,
       );
-    const inReplyTo =
+    const inReplyTo = normalizeMessageId(
       retrieved.in_reply_to ||
-      getHeader(headers, "In-Reply-To") ||
-      eventData.in_reply_to ||
-      null;
+        getHeader(headers, "In-Reply-To") ||
+        eventData.in_reply_to ||
+        null,
+    );
     const threadId = await resolveThreadId(
       inReplyTo,
       threadIdFromValue(retrieved.thread_id || eventData.thread_id),

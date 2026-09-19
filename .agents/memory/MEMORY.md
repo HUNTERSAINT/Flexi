@@ -1,0 +1,1 @@
+- [Resend webhook state](resend-webhook.md) — the correct production webhook is enabled; an older duplicate exists and should not be deleted without confirmation.
