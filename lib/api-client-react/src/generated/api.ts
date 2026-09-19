@@ -26,12 +26,18 @@ import type {
   DriverAssignment,
   DriverInput,
   DriverUpdate,
+  EmailWebhookInput,
   ErrorResponse,
   GetMyDeliveriesParams,
   GuestShipmentInput,
   GuestShipmentResponse,
   HealthStatus,
+  InboxEmail,
+  InboxEmailInput,
+  InboxThread,
+  InboxThreadDetail,
   ListDriversParams,
+  ListInboxThreadsParams,
   ListNotificationsParams,
   ListPaymentsParams,
   ListShipmentsParams,
@@ -2875,6 +2881,380 @@ export function useGetAdminAnalytics<TData = Awaited<ReturnType<typeof getAdminA
 
 
 
+
+export const getListInboxThreadsUrl = (params?: ListInboxThreadsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/inbox/threads?${stringifiedParams}` : `/api/admin/inbox/threads`
+}
+
+/**
+ * @summary List admin email threads
+ */
+export const listInboxThreads = async (params?: ListInboxThreadsParams, options?: Parameters<typeof customFetch>[1]): Promise<InboxThread[]> => {
+
+  return customFetch<InboxThread[]>(getListInboxThreadsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListInboxThreadsQueryKey = (params?: ListInboxThreadsParams,) => {
+    return [
+    `/api/admin/inbox/threads`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListInboxThreadsQueryOptions = <TData = Awaited<ReturnType<typeof listInboxThreads>>, TError = ErrorType<unknown>>(params?: ListInboxThreadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listInboxThreads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListInboxThreadsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listInboxThreads>>> = ({ signal }) => listInboxThreads(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listInboxThreads>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListInboxThreadsQueryResult = NonNullable<Awaited<ReturnType<typeof listInboxThreads>>>
+export type ListInboxThreadsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List admin email threads
+ */
+
+export function useListInboxThreads<TData = Awaited<ReturnType<typeof listInboxThreads>>, TError = ErrorType<unknown>>(
+ params?: ListInboxThreadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listInboxThreads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListInboxThreadsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetInboxThreadUrl = (threadId: string,) => {
+
+
+
+
+  return `/api/admin/inbox/threads/${threadId}`
+}
+
+/**
+ * @summary Get an admin email thread
+ */
+export const getInboxThread = async (threadId: string, options?: Parameters<typeof customFetch>[1]): Promise<InboxThreadDetail> => {
+
+  return customFetch<InboxThreadDetail>(getGetInboxThreadUrl(threadId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInboxThreadQueryKey = (threadId: string,) => {
+    return [
+    `/api/admin/inbox/threads/${threadId}`
+    ] as const;
+    }
+
+
+export const getGetInboxThreadQueryOptions = <TData = Awaited<ReturnType<typeof getInboxThread>>, TError = ErrorType<ErrorResponse>>(threadId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInboxThread>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInboxThreadQueryKey(threadId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInboxThread>>> = ({ signal }) => getInboxThread(threadId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: threadId !== null && threadId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInboxThread>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetInboxThreadQueryResult = NonNullable<Awaited<ReturnType<typeof getInboxThread>>>
+export type GetInboxThreadQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get an admin email thread
+ */
+
+export function useGetInboxThread<TData = Awaited<ReturnType<typeof getInboxThread>>, TError = ErrorType<ErrorResponse>>(
+ threadId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInboxThread>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetInboxThreadQueryOptions(threadId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getMarkInboxThreadReadUrl = (threadId: string,) => {
+
+
+
+
+  return `/api/admin/inbox/threads/${threadId}/read`
+}
+
+/**
+ * @summary Mark an email thread as read
+ */
+export const markInboxThreadRead = async (threadId: string, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getMarkInboxThreadReadUrl(threadId),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+
+export const getMarkInboxThreadReadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markInboxThreadRead>>, TError,{threadId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markInboxThreadRead>>, TError,{threadId: string}, TContext> => {
+
+const mutationKey = ['markInboxThreadRead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markInboxThreadRead>>, {threadId: string}> = (props) => {
+          const {threadId} = props ?? {};
+
+          return  markInboxThreadRead(threadId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkInboxThreadReadMutationResult = NonNullable<Awaited<ReturnType<typeof markInboxThreadRead>>>
+
+    export type MarkInboxThreadReadMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark an email thread as read
+ */
+export const useMarkInboxThreadRead = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markInboxThreadRead>>, TError,{threadId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markInboxThreadRead>>,
+        TError,
+        {threadId: string},
+        TContext
+      > => {
+      return useMutation(getMarkInboxThreadReadMutationOptions(options));
+    }
+
+export const getSendInboxEmailUrl = () => {
+
+
+
+
+  return `/api/admin/inbox/send`
+}
+
+/**
+ * @summary Send an email from the admin inbox
+ */
+export const sendInboxEmail = async (inboxEmailInput: InboxEmailInput, options?: Parameters<typeof customFetch>[1]): Promise<InboxEmail> => {
+
+  return customFetch<InboxEmail>(getSendInboxEmailUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(inboxEmailInput)
+  }
+);}
+
+
+
+
+
+export const getSendInboxEmailMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendInboxEmail>>, TError,{data: BodyType<InboxEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendInboxEmail>>, TError,{data: BodyType<InboxEmailInput>}, TContext> => {
+
+const mutationKey = ['sendInboxEmail'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendInboxEmail>>, {data: BodyType<InboxEmailInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendInboxEmail(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendInboxEmailMutationResult = NonNullable<Awaited<ReturnType<typeof sendInboxEmail>>>
+    export type SendInboxEmailMutationBody = BodyType<InboxEmailInput>
+    export type SendInboxEmailMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Send an email from the admin inbox
+ */
+export const useSendInboxEmail = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendInboxEmail>>, TError,{data: BodyType<InboxEmailInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendInboxEmail>>,
+        TError,
+        {data: BodyType<InboxEmailInput>},
+        TContext
+      > => {
+      return useMutation(getSendInboxEmailMutationOptions(options));
+    }
+
+export const getReceiveEmailWebhookUrl = () => {
+
+
+
+
+  return `/api/emails/webhook`
+}
+
+/**
+ * @summary Receive a Resend email.received webhook
+ */
+export const receiveEmailWebhook = async (emailWebhookInput: EmailWebhookInput, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getReceiveEmailWebhookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(emailWebhookInput)
+  }
+);}
+
+
+
+
+
+export const getReceiveEmailWebhookMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveEmailWebhook>>, TError,{data: BodyType<EmailWebhookInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receiveEmailWebhook>>, TError,{data: BodyType<EmailWebhookInput>}, TContext> => {
+
+const mutationKey = ['receiveEmailWebhook'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receiveEmailWebhook>>, {data: BodyType<EmailWebhookInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  receiveEmailWebhook(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceiveEmailWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof receiveEmailWebhook>>>
+    export type ReceiveEmailWebhookMutationBody = BodyType<EmailWebhookInput>
+    export type ReceiveEmailWebhookMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Receive a Resend email.received webhook
+ */
+export const useReceiveEmailWebhook = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveEmailWebhook>>, TError,{data: BodyType<EmailWebhookInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof receiveEmailWebhook>>,
+        TError,
+        {data: BodyType<EmailWebhookInput>},
+        TContext
+      > => {
+      return useMutation(getReceiveEmailWebhookMutationOptions(options));
+    }
 
 export const getListShipmentStatusesUrl = () => {
 

@@ -7,3 +7,4 @@ export * from "./notifications";
 export * from "./trackingEvents";
 export * from "./pricing";
 export * from "./wallets";
+export * from "./emails";

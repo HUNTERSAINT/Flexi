@@ -454,6 +454,99 @@ export interface AdminAnalytics {
   paymentStats: PaymentStats;
 }
 
+export interface InboxAttachment {
+  /** @nullable */
+  id?: string | null;
+  filename: string;
+  /** @nullable */
+  size?: number | null;
+  contentType: string;
+  /** @nullable */
+  contentDisposition?: string | null;
+  /** @nullable */
+  contentId?: string | null;
+  /** @nullable */
+  downloadUrl?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+}
+
+export type InboxEmailDirection = typeof InboxEmailDirection[keyof typeof InboxEmailDirection];
+
+
+export const InboxEmailDirection = {
+  inbound: 'inbound',
+  outbound: 'outbound',
+} as const;
+
+export interface InboxEmail {
+  id: number;
+  threadId: string;
+  direction: InboxEmailDirection;
+  status: string;
+  /** @nullable */
+  resendEmailId?: string | null;
+  /** @nullable */
+  messageId?: string | null;
+  /** @nullable */
+  inReplyTo?: string | null;
+  /** @nullable */
+  references?: string | null;
+  fromAddress: string;
+  toAddress: string;
+  /** @nullable */
+  ccAddress?: string | null;
+  /** @nullable */
+  bccAddress?: string | null;
+  subject: string;
+  /** @nullable */
+  textBody?: string | null;
+  /** @nullable */
+  htmlBody?: string | null;
+  attachments: InboxAttachment[];
+  isRead: boolean;
+  receivedAt: string;
+  createdAt: string;
+}
+
+export type InboxThreadLatestDirection = typeof InboxThreadLatestDirection[keyof typeof InboxThreadLatestDirection];
+
+
+export const InboxThreadLatestDirection = {
+  inbound: 'inbound',
+  outbound: 'outbound',
+} as const;
+
+export interface InboxThread {
+  threadId: string;
+  subject: string;
+  participants: string[];
+  preview: string;
+  latestMessageAt: string;
+  unreadCount: number;
+  messageCount: number;
+  latestDirection: InboxThreadLatestDirection;
+}
+
+export interface InboxThreadDetail {
+  threadId: string;
+  messages: InboxEmail[];
+}
+
+export interface InboxEmailInput {
+  to: string;
+  cc?: string;
+  bcc?: string;
+  /** @minLength 1 */
+  subject: string;
+  textBody: string;
+  htmlBody?: string;
+  threadId?: string;
+  inReplyTo?: string;
+}
+
+export interface EmailWebhookInput { [key: string]: unknown }
+
 export type PricingServiceType = typeof PricingServiceType[keyof typeof PricingServiceType];
 
 
@@ -535,5 +628,14 @@ status?: string;
 
 export type ListNotificationsParams = {
 isRead?: boolean;
+};
+
+export type ListInboxThreadsParams = {
+unreadOnly?: boolean;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };
 

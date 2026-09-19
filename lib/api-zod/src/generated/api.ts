@@ -1027,6 +1027,145 @@ export const GetAdminAnalyticsResponse = zod.object({
 
 
 /**
+ * @summary List admin email threads
+ */
+export const listInboxThreadsQueryLimitDefault = 50;
+export const listInboxThreadsQueryLimitMax = 100;
+
+
+
+export const ListInboxThreadsQueryParams = zod.object({
+  "unreadOnly": zod.coerce.boolean().optional(),
+  "limit": zod.coerce.number().int().min(1).max(listInboxThreadsQueryLimitMax).default(listInboxThreadsQueryLimitDefault)
+})
+
+export const ListInboxThreadsResponseItem = zod.object({
+  "threadId": zod.string(),
+  "subject": zod.string(),
+  "participants": zod.array(zod.string()),
+  "preview": zod.string(),
+  "latestMessageAt": zod.coerce.date(),
+  "unreadCount": zod.int(),
+  "messageCount": zod.int(),
+  "latestDirection": zod.enum(['inbound', 'outbound'])
+})
+export const ListInboxThreadsResponse = zod.array(ListInboxThreadsResponseItem)
+
+
+/**
+ * @summary Get an admin email thread
+ */
+export const GetInboxThreadParams = zod.object({
+  "threadId": zod.coerce.string()
+})
+
+export const GetInboxThreadResponse = zod.object({
+  "threadId": zod.string(),
+  "messages": zod.array(zod.object({
+  "id": zod.int(),
+  "threadId": zod.string(),
+  "direction": zod.enum(['inbound', 'outbound']),
+  "status": zod.string(),
+  "resendEmailId": zod.string().nullish(),
+  "messageId": zod.string().nullish(),
+  "inReplyTo": zod.string().nullish(),
+  "references": zod.string().nullish(),
+  "fromAddress": zod.string(),
+  "toAddress": zod.string(),
+  "ccAddress": zod.string().nullish(),
+  "bccAddress": zod.string().nullish(),
+  "subject": zod.string(),
+  "textBody": zod.string().nullish(),
+  "htmlBody": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().nullish(),
+  "filename": zod.string(),
+  "size": zod.int().nullish(),
+  "contentType": zod.string(),
+  "contentDisposition": zod.string().nullish(),
+  "contentId": zod.string().nullish(),
+  "downloadUrl": zod.string().nullish(),
+  "expiresAt": zod.string().nullish()
+})),
+  "isRead": zod.boolean(),
+  "receivedAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Mark an email thread as read
+ */
+export const MarkInboxThreadReadParams = zod.object({
+  "threadId": zod.coerce.string()
+})
+
+export const MarkInboxThreadReadResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Send an email from the admin inbox
+ */
+
+
+
+export const SendInboxEmailBody = zod.object({
+  "to": zod.email(),
+  "cc": zod.string().optional(),
+  "bcc": zod.string().optional(),
+  "subject": zod.string().min(1),
+  "textBody": zod.string(),
+  "htmlBody": zod.string().optional(),
+  "threadId": zod.string().optional(),
+  "inReplyTo": zod.string().optional()
+})
+
+export const SendInboxEmailResponse = zod.object({
+  "id": zod.int(),
+  "threadId": zod.string(),
+  "direction": zod.enum(['inbound', 'outbound']),
+  "status": zod.string(),
+  "resendEmailId": zod.string().nullish(),
+  "messageId": zod.string().nullish(),
+  "inReplyTo": zod.string().nullish(),
+  "references": zod.string().nullish(),
+  "fromAddress": zod.string(),
+  "toAddress": zod.string(),
+  "ccAddress": zod.string().nullish(),
+  "bccAddress": zod.string().nullish(),
+  "subject": zod.string(),
+  "textBody": zod.string().nullish(),
+  "htmlBody": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string().nullish(),
+  "filename": zod.string(),
+  "size": zod.int().nullish(),
+  "contentType": zod.string(),
+  "contentDisposition": zod.string().nullish(),
+  "contentId": zod.string().nullish(),
+  "downloadUrl": zod.string().nullish(),
+  "expiresAt": zod.string().nullish()
+})),
+  "isRead": zod.boolean(),
+  "receivedAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Receive a Resend email.received webhook
+ */
+export const ReceiveEmailWebhookBody = zod.record(zod.string(), zod.unknown())
+
+export const ReceiveEmailWebhookResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
  * @summary List shipment statuses
  */
 export const ListShipmentStatusesResponseItem = zod.object({

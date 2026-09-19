@@ -28,6 +28,8 @@ tags:
     description: Public shipment tracking
   - name: pricing
     description: Pricing management
+  - name: inbox
+    description: Admin email inbox
 
 paths:
   /healthz:
@@ -932,6 +934,148 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminAnalytics"
 
+  # --- ADMIN EMAIL INBOX ---
+  /admin/inbox/threads:
+    get:
+      operationId: listInboxThreads
+      tags: [inbox]
+      summary: List admin email threads
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Email threads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InboxThread"
+
+  /admin/inbox/threads/{threadId}:
+    get:
+      operationId: getInboxThread
+      tags: [inbox]
+      summary: Get an admin email thread
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InboxThreadDetail"
+        "404":
+          description: Thread not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/inbox/threads/{threadId}/read:
+    patch:
+      operationId: markInboxThreadRead
+      tags: [inbox]
+      summary: Mark an email thread as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Thread marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/inbox/send:
+    post:
+      operationId: sendInboxEmail
+      tags: [inbox]
+      summary: Send an email from the admin inbox
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InboxEmailInput"
+      responses:
+        "201":
+          description: Email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InboxEmail"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Email provider error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /emails/webhook:
+    post:
+      operationId: receiveEmailWebhook
+      tags: [inbox]
+      summary: Receive a Resend email.received webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailWebhookInput"
+      responses:
+        "200":
+          description: Webhook accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Invalid webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /admin/statuses:
     get:
       operationId: listShipmentStatuses
@@ -1667,6 +1811,139 @@ components:
           type: integer
         rejected:
           type: integer
+
+    # --- ADMIN INBOX SCHEMAS ---
+    InboxAttachment:
+      type: object
+      required: [filename, contentType]
+      properties:
+        id:
+          type: ["string", "null"]
+        filename:
+          type: string
+        size:
+          type: ["integer", "null"]
+        contentType:
+          type: string
+        contentDisposition:
+          type: ["string", "null"]
+        contentId:
+          type: ["string", "null"]
+        downloadUrl:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+
+    InboxEmail:
+      type: object
+      required: [id, threadId, direction, status, fromAddress, toAddress, subject, attachments, isRead, receivedAt, createdAt]
+      properties:
+        id:
+          type: integer
+        threadId:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        status:
+          type: string
+        resendEmailId:
+          type: ["string", "null"]
+        messageId:
+          type: ["string", "null"]
+        inReplyTo:
+          type: ["string", "null"]
+        references:
+          type: ["string", "null"]
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+        ccAddress:
+          type: ["string", "null"]
+        bccAddress:
+          type: ["string", "null"]
+        subject:
+          type: string
+        textBody:
+          type: ["string", "null"]
+        htmlBody:
+          type: ["string", "null"]
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/InboxAttachment"
+        isRead:
+          type: boolean
+        receivedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    InboxThread:
+      type: object
+      required: [threadId, subject, participants, preview, latestMessageAt, unreadCount, messageCount, latestDirection]
+      properties:
+        threadId:
+          type: string
+        subject:
+          type: string
+        participants:
+          type: array
+          items:
+            type: string
+        preview:
+          type: string
+        latestMessageAt:
+          type: string
+          format: date-time
+        unreadCount:
+          type: integer
+        messageCount:
+          type: integer
+        latestDirection:
+          type: string
+          enum: [inbound, outbound]
+
+    InboxThreadDetail:
+      type: object
+      required: [threadId, messages]
+      properties:
+        threadId:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/InboxEmail"
+
+    InboxEmailInput:
+      type: object
+      required: [to, subject, textBody]
+      properties:
+        to:
+          type: string
+          format: email
+        cc:
+          type: string
+        bcc:
+          type: string
+        subject:
+          type: string
+          minLength: 1
+        textBody:
+          type: string
+        htmlBody:
+          type: string
+        threadId:
+          type: string
+        inReplyTo:
+          type: string
+
+    EmailWebhookInput:
+      type: object
+      additionalProperties: true
 
     # --- PRICING SCHEMAS ---
     Pricing:

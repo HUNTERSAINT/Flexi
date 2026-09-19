@@ -16,7 +16,8 @@ import {
   DollarSign,
   Settings,
   Shield,
-  Wallet
+  Wallet,
+  Inbox
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getListNotificationsQueryKey, useListNotifications } from '@workspace/api-client-react';
@@ -39,6 +40,7 @@ const ADMIN_NAV = [
   { href: '/admin/wallets', label: 'Wallets', icon: Wallet },
   { href: '/admin/admins', label: 'Admins', icon: Shield },
   { href: '/admin/notifications', label: 'Notifications', icon: Bell },
+  { href: '/admin/inbox', label: 'Inbox', icon: Inbox },
 ];
 
 const DRIVER_NAV = [

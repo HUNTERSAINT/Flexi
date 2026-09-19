@@ -18,7 +18,8 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "pino": "^10.1.0",
-    "pino-http": "^11.0.0"
+    "pino-http": "^11.0.0",
+    "resend": "^6.28.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
