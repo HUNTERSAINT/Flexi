@@ -111,7 +111,12 @@ async function resolveThreadId(
     const candidates = await db
       .select({ threadId: emailsTable.threadId, messageId: emailsTable.messageId })
       .from(emailsTable)
-      .where(eq(emailsTable.messageId, normalizedReply))
+      .where(
+        or(
+          eq(emailsTable.messageId, normalizedReply),
+          eq(emailsTable.messageId, `<${normalizedReply}>`),
+        ),
+      )
       .limit(1);
     if (candidates[0]?.threadId) return candidates[0].threadId;
   }
@@ -232,7 +237,7 @@ router.post("/emails/send", requireRole("admin"), async (req, res) => {
         subject: input.subject,
         bodyHtml: textToHtml(input.body),
         bodyText: input.body,
-        messageId: sent.messageId,
+        messageId: normalizeMessageId(sent.messageId),
         inReplyTo,
         threadId,
         attachments: [],

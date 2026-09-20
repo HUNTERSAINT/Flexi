@@ -1,0 +1,1 @@
+- [Railway environment scope](railway-environment-scope.md) — production variables and private database access depend on the service-scoped Railway environment.
