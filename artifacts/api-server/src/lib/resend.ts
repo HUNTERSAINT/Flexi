@@ -93,24 +93,26 @@ export async function sendEmailThroughResend(input: {
   body: string;
   from?: string;
   replyTo?: string;
+  inReplyTo?: string;
 }): Promise<SentEmailResult> {
   const messageId = `<${randomUUID()}@flexirouteglobal.com>`;
   const payload = {
     from: input.from || fromAddress,
     to: [input.to],
+    ...(input.replyTo ? { reply_to: input.replyTo } : {}),
     subject: input.subject,
     text: input.body,
     html: textToHtml(input.body),
     headers: {
       "Message-ID": messageId,
-      ...(input.replyTo
+      ...(input.inReplyTo
         ? {
-            "In-Reply-To": input.replyTo.startsWith("<")
-              ? input.replyTo
-              : `<${input.replyTo}>`,
-            References: input.replyTo.startsWith("<")
-              ? input.replyTo
-              : `<${input.replyTo}>`,
+            "In-Reply-To": input.inReplyTo.startsWith("<")
+              ? input.inReplyTo
+              : `<${input.inReplyTo}>`,
+            References: input.inReplyTo.startsWith("<")
+              ? input.inReplyTo
+              : `<${input.inReplyTo}>`,
           }
         : {}),
     },

@@ -1103,6 +1103,30 @@ export const UpdatePricingResponse = zod.object({
 
 
 /**
+ * @summary Send a public contact message
+ */
+export const submitContactMessageBodyNameMax = 120;
+
+export const submitContactMessageBodySubjectMax = 998;
+
+export const submitContactMessageBodyMessageMax = 20000;
+
+
+
+export const SubmitContactMessageBody = zod.object({
+  "name": zod.string().min(1).max(submitContactMessageBodyNameMax),
+  "email": zod.email(),
+  "subject": zod.string().max(submitContactMessageBodySubjectMax).optional(),
+  "message": zod.string().min(1).max(submitContactMessageBodyMessageMax)
+})
+
+export const SubmitContactMessageResponse = zod.object({
+  "received": zod.boolean(),
+  "emailId": zod.int()
+})
+
+
+/**
  * @summary Send an outbound email through Resend (admin only)
  */
 export const sendEmailBodySubjectMax = 998;

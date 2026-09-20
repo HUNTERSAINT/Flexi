@@ -24,6 +24,13 @@ const sendEmailBodySchema = z.object({
   thread_id: z.string().optional(),
 });
 
+const contactMessageSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().email(),
+  subject: z.string().trim().max(998).optional(),
+  message: z.string().trim().min(1).max(20_000),
+});
+
 type WebhookRequest = Express.Request & {
   rawBody?: Buffer;
 };
@@ -137,8 +144,62 @@ async function sendAdminNotification(email: {
       "",
       `View it in the Flexi Route inbox: ${link}`,
     ].join("\n"),
+    replyTo: email.fromAddress,
   });
 }
+
+router.post("/emails/contact", async (req, res) => {
+  const parsed = contactMessageSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "name, email, and message are required" });
+    return;
+  }
+
+  const input = parsed.data;
+  const subject = input.subject || "New message from the Flexi Route website";
+  const threadId = `thread_${crypto.randomUUID()}`;
+  const bodyText = [`Name: ${input.name}`, `Email: ${input.email}`, "", input.message].join(
+    "\n",
+  );
+
+  try {
+    const [saved] = await db
+      .insert(emailsTable)
+      .values({
+        direction: "inbound",
+        fromAddress: input.email,
+        toAddress: process.env.ADMIN_NOTIFICATION_EMAIL || fromAddress,
+        subject,
+        bodyHtml: textToHtml(bodyText),
+        bodyText,
+        messageId: `<contact-${crypto.randomUUID()}@flexirouteglobal.com>`,
+        threadId,
+        attachments: [],
+        status: "received",
+        isRead: false,
+      })
+      .returning();
+
+    try {
+      await sendAdminNotification(saved);
+    } catch (notificationError) {
+      req.log.error(
+        { err: notificationError, emailId: saved.id },
+        "Contact message saved but admin notification failed",
+      );
+      res.status(502).json({
+        error:
+          "Your message was saved, but the admin notification could not be delivered. Please try again later.",
+      });
+      return;
+    }
+
+    res.status(201).json({ received: true, emailId: saved.id });
+  } catch (error) {
+    req.log.error({ err: error }, "Failed to process contact message");
+    res.status(500).json({ error: "Could not send your message" });
+  }
+});
 
 router.post("/emails/send", requireRole("admin"), async (req, res) => {
   const parsed = sendEmailBodySchema.safeParse(req.body);
@@ -159,7 +220,7 @@ router.post("/emails/send", requireRole("admin"), async (req, res) => {
       to: input.to,
       subject: input.subject,
       body: input.body,
-      replyTo: inReplyTo || undefined,
+      inReplyTo: inReplyTo || undefined,
     });
     const [saved] = await db
       .insert(emailsTable)

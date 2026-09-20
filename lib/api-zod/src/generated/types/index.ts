@@ -8,6 +8,7 @@
 
 export * from './adminAnalytics';
 export * from './authResponse';
+export * from './contactMessageRequest';
 export * from './driver';
 export * from './driverAssignment';
 export * from './driverInput';
@@ -61,6 +62,7 @@ export * from './shipmentStatus';
 export * from './shipmentStatusInput';
 export * from './shipmentUpdate';
 export * from './statusCount';
+export * from './submitContactMessage201';
 export * from './successResponse';
 export * from './trackingEvent';
 export * from './trackingEventInput';

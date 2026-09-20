@@ -38,7 +38,12 @@ application's secure setup flow. Never commit login credentials to this file.
 | `NODE_ENV` | `production` |
 | `APP_URL` | `https://flexirouteglobal.com` |
 | `EMAIL_FROM` | `Flexi Route <support@flexirouteglobal.com>` |
+| `RESEND_FROM_ADDRESS` | `notifications@flexirouteglobal.com` |
+| `EMAIL_REPLY_TO` | `notifications@flexirouteglobal.com` |
 | `RESEND_API_KEY` | (set in Railway dashboard) |
+| `RESEND_WEBHOOK_SECRET` | (copy from the Resend webhook endpoint) |
+| `ADMIN_NOTIFICATION_EMAIL` | Email address that receives new customer-message alerts |
+| `PUBLIC_APP_URL` | `https://flexirouteglobal.com` |
 | `PNPM_VERSION` | `10.26.1` |
 
 ### Frontend
@@ -77,6 +82,21 @@ application's secure setup flow. Never commit login credentials to this file.
 | CNAME | api.flexirouteglobal.com    | api-server-production-2c9f.up.railway.app |
 
 All records are **proxied through Cloudflare** (orange cloud). SSL mode: **Full**.
+
+### Resend inbound mail
+
+Customer replies reach the admin inbox only when the Resend receiving records
+for `flexirouteglobal.com` are present in Cloudflare and the Resend webhook is
+configured as:
+
+```
+https://api.flexirouteglobal.com/api/emails/webhook
+```
+
+Enable the `email.received` event and copy that endpoint's signing secret to
+`RESEND_WEBHOOK_SECRET` in the Railway API service. The sender addresses used
+by the app (`notifications@flexirouteglobal.com` and
+`support@flexirouteglobal.com`) must use the same Resend-verified domain.
 
 ## Redeploying
 

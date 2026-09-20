@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { MapPin, Phone, Mail, Clock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSubmitContactMessage } from '@workspace/api-client-react';
 
 const offices = [
   { city: 'Chicago (HQ)', address: '123 Logistics Way, Chicago, IL 60601', phone: '+1 (800) 353-9476', img: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=2244&auto=format&fit=crop' },
@@ -15,6 +16,7 @@ const offices = [
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const submitContactMessage = useSubmitContactMessage();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +24,25 @@ export default function Contact() {
       toast.error('Please fill in all required fields.');
       return;
     }
-    setSubmitted(true);
-    toast.success('Message sent! We\'ll get back to you within 24 hours.');
+    submitContactMessage.mutate(
+      {
+        data: {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          ...(form.subject.trim() ? { subject: form.subject.trim() } : {}),
+          message: form.message.trim(),
+        },
+      },
+      {
+        onSuccess: () => {
+          setSubmitted(true);
+          toast.success('Message sent! We\'ll get back to you within 24 hours.');
+        },
+        onError: () => {
+          toast.error('Message could not be sent. Please try again later.');
+        },
+      },
+    );
   };
 
   return (
@@ -102,7 +121,9 @@ export default function Contact() {
                   <label className="text-sm font-medium text-gray-700 mb-1 block">Message *</label>
                   <Textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="Tell us about your shipping needs..." rows={6} />
                 </div>
-                <Button type="submit" size="lg" className="w-full h-12 text-lg">Send Message</Button>
+                 <Button type="submit" size="lg" className="w-full h-12 text-lg" disabled={submitContactMessage.isPending}>
+                   {submitContactMessage.isPending ? 'Sending…' : 'Send Message'}
+                 </Button>
               </form>
             )}
           </div>

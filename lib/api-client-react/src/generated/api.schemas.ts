@@ -30,6 +30,22 @@ export interface SendEmailRequest {
   threadId?: string;
 }
 
+export interface ContactMessageRequest {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  email: string;
+  /** @maxLength 998 */
+  subject?: string;
+  /**
+     * @minLength 1
+     * @maxLength 20000
+     */
+  message: string;
+}
+
 export type EmailDirection = typeof EmailDirection[keyof typeof EmailDirection];
 
 
@@ -609,6 +625,11 @@ status?: string;
 
 export type ListNotificationsParams = {
 isRead?: boolean;
+};
+
+export type SubmitContactMessage201 = {
+  received: boolean;
+  emailId: number;
 };
 
 export type ListEmailThreadsParams = {

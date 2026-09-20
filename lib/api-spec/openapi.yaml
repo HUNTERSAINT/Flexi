@@ -1014,6 +1014,43 @@ paths:
                 $ref: "#/components/schemas/Pricing"
 
   # --- EMAIL INBOX ---
+  /emails/contact:
+    post:
+      operationId: submitContactMessage
+      tags: [emails]
+      summary: Send a public contact message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactMessageRequest"
+      responses:
+        "201":
+          description: Contact message received
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [received, emailId]
+                properties:
+                  received:
+                    type: boolean
+                  emailId:
+                    type: integer
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Message saved but admin notification failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /emails/send:
     post:
       operationId: sendEmail
@@ -1191,6 +1228,25 @@ components:
           type: string
         threadId:
           type: string
+
+    ContactMessageRequest:
+      type: object
+      required: [name, email, message]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        subject:
+          type: string
+          maxLength: 998
+        message:
+          type: string
+          minLength: 1
+          maxLength: 20000
 
     Email:
       type: object

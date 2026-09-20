@@ -22,6 +22,7 @@ import type {
 import type {
   AdminAnalytics,
   AuthResponse,
+  ContactMessageRequest,
   Driver,
   DriverAssignment,
   DriverInput,
@@ -59,6 +60,7 @@ import type {
   ShipmentStatus,
   ShipmentStatusInput,
   ShipmentUpdate,
+  SubmitContactMessage201,
   SuccessResponse,
   TrackingEvent,
   TrackingEventInput,
@@ -3177,6 +3179,77 @@ export const useUpdatePricing = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdatePricingMutationOptions(options));
+    }
+
+export const getSubmitContactMessageUrl = () => {
+
+
+
+
+  return `/api/emails/contact`
+}
+
+/**
+ * @summary Send a public contact message
+ */
+export const submitContactMessage = async (contactMessageRequest: ContactMessageRequest, options?: Parameters<typeof customFetch>[1]): Promise<SubmitContactMessage201> => {
+
+  return customFetch<SubmitContactMessage201>(getSubmitContactMessageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(contactMessageRequest)
+  }
+);}
+
+
+
+
+
+export const getSubmitContactMessageMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitContactMessage>>, TError,{data: BodyType<ContactMessageRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitContactMessage>>, TError,{data: BodyType<ContactMessageRequest>}, TContext> => {
+
+const mutationKey = ['submitContactMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitContactMessage>>, {data: BodyType<ContactMessageRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitContactMessage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitContactMessageMutationResult = NonNullable<Awaited<ReturnType<typeof submitContactMessage>>>
+    export type SubmitContactMessageMutationBody = BodyType<ContactMessageRequest>
+    export type SubmitContactMessageMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Send a public contact message
+ */
+export const useSubmitContactMessage = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitContactMessage>>, TError,{data: BodyType<ContactMessageRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitContactMessage>>,
+        TError,
+        {data: BodyType<ContactMessageRequest>},
+        TContext
+      > => {
+      return useMutation(getSubmitContactMessageMutationOptions(options));
     }
 
 export const getSendEmailUrl = () => {
