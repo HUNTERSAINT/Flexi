@@ -101,6 +101,17 @@ function threadIdFromValue(value?: string | null): string | null {
   return normalized || null;
 }
 
+function getAdminNotificationEmail(): string {
+  const configured = process.env.ADMIN_NOTIFICATION_EMAIL?.trim();
+  const parsed = z.string().email().safeParse(configured);
+  if (!parsed.success) {
+    throw new Error(
+      "ADMIN_NOTIFICATION_EMAIL is missing or must be a valid email address",
+    );
+  }
+  return parsed.data;
+}
+
 async function resolveThreadId(
   inReplyTo: string | null,
   suppliedThreadId: string | null,
@@ -130,15 +141,12 @@ async function sendAdminNotification(email: {
   bodyHtml: string | null;
   bodyText: string | null;
 }) {
-  const adminAddress = process.env.ADMIN_NOTIFICATION_EMAIL;
-  if (!adminAddress) {
-    throw new Error("ADMIN_NOTIFICATION_EMAIL is not configured");
-  }
+  const adminAddress = getAdminNotificationEmail();
   const appUrl = process.env.PUBLIC_APP_URL || "https://flexirouteglobal.com";
   const link = `${appUrl.replace(/\/$/, "")}/admin/inbox/${email.id}`;
   const preview = previewText(email.bodyHtml, email.bodyText);
   await sendEmailThroughResend({
-    from: "notifications@flexirouteglobal.com",
+    from: fromAddress,
     to: adminAddress,
     subject: `New email from ${email.fromAddress}: ${email.subject}`,
     body: [
@@ -173,7 +181,7 @@ router.post("/emails/contact", async (req, res) => {
       .values({
         direction: "inbound",
         fromAddress: input.email,
-        toAddress: process.env.ADMIN_NOTIFICATION_EMAIL || fromAddress,
+        toAddress: getAdminNotificationEmail(),
         subject,
         bodyHtml: textToHtml(bodyText),
         bodyText,

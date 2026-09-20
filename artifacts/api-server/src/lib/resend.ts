@@ -9,6 +9,7 @@ const connectors = new ReplitConnectors();
 export const DEFAULT_FROM_ADDRESS = "notifications@flexirouteglobal.com";
 export const fromAddress =
   process.env.RESEND_FROM_ADDRESS || DEFAULT_FROM_ADDRESS;
+const defaultReplyTo = process.env.EMAIL_REPLY_TO?.trim();
 
 type ResendError = {
   message?: string;
@@ -99,7 +100,9 @@ export async function sendEmailThroughResend(input: {
   const payload = {
     from: input.from || fromAddress,
     to: [input.to],
-    ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+    ...(input.replyTo || defaultReplyTo
+      ? { reply_to: input.replyTo || defaultReplyTo }
+      : {}),
     subject: input.subject,
     text: input.body,
     html: textToHtml(input.body),
