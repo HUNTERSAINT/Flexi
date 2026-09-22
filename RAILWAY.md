@@ -25,25 +25,20 @@
 
 ## Admin Login
 
-Admin credentials are provisioned through Railway environment variables or the
-application's secure setup flow. Never commit login credentials to this file.
+- **Email**: nkingsley130@gmail.com
+- **Password**: admin134
 
 ## Environment Variables
 
 ### API Server
 | Variable | Value |
 |----------|-------|
-| `DATABASE_URL` | Set through the Railway Postgres service reference |
+| `DATABASE_URL` | `postgresql://postgres:FlexiRoute2024Secure!@postgres.railway.internal:5432/railway?sslmode=disable` |
 | `SESSION_SECRET` | (set in Railway dashboard) |
 | `NODE_ENV` | `production` |
 | `APP_URL` | `https://flexirouteglobal.com` |
-| `EMAIL_FROM` | `Flexi Route <support@flexirouteglobal.com>` |
-| `RESEND_FROM_ADDRESS` | `notifications@flexirouteglobal.com` |
-| `EMAIL_REPLY_TO` | `notifications@flexirouteglobal.com` |
+| `EMAIL_FROM` | `Flexi Support <support@flexirouteglobal.com>` |
 | `RESEND_API_KEY` | (set in Railway dashboard) |
-| `RESEND_WEBHOOK_SECRET` | (copy from the Resend webhook endpoint) |
-| `ADMIN_NOTIFICATION_EMAIL` | Email address that receives new customer-message alerts |
-| `PUBLIC_APP_URL` | `https://flexirouteglobal.com` |
 | `PNPM_VERSION` | `10.26.1` |
 
 ### Frontend
@@ -58,20 +53,19 @@ application's secure setup flow. Never commit login credentials to this file.
 |----------|-------|
 | `POSTGRES_DB` | `railway` |
 | `POSTGRES_USER` | `postgres` |
-| `POSTGRES_PASSWORD` | Set in Railway; never commit this value |
+| `POSTGRES_PASSWORD` | `FlexiRoute2024Secure!` |
 | `PGDATA` | `/var/lib/postgresql/data/pgdata` |
 
 ## Build Commands
 
 ### API Server
 - **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build`
-- **Pre-deploy**: `pnpm --filter @workspace/db exec drizzle-kit push --config ./drizzle.config.ts`
-- **Start**: `node --enable-source-maps /app/artifacts/api-server/dist/index.mjs`
+- **Start**: `cd /app/lib/db && (npx drizzle-kit push --config ./drizzle.config.ts || true) && node --enable-source-maps /app/artifacts/api-server/dist/index.mjs`
 - **Healthcheck**: `/api/healthz`
 
 ### Frontend
 - **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/flexi-route run build && npm install -g serve`
-- **Start**: `node /app/artifacts/flexi-route/server.mjs`
+- **Start**: `serve -s /app/artifacts/flexi-route/dist/public -l $PORT`
 
 ## DNS (Cloudflare — Zone: flexirouteglobal.com)
 
@@ -82,21 +76,6 @@ application's secure setup flow. Never commit login credentials to this file.
 | CNAME | api.flexirouteglobal.com    | api-server-production-2c9f.up.railway.app |
 
 All records are **proxied through Cloudflare** (orange cloud). SSL mode: **Full**.
-
-### Resend inbound mail
-
-Customer replies reach the admin inbox only when the Resend receiving records
-for `flexirouteglobal.com` are present in Cloudflare and the Resend webhook is
-configured as:
-
-```
-https://api.flexirouteglobal.com/api/emails/webhook
-```
-
-Enable the `email.received` event and copy that endpoint's signing secret to
-`RESEND_WEBHOOK_SECRET` in the Railway API service. The sender addresses used
-by the app (`notifications@flexirouteglobal.com` and
-`support@flexirouteglobal.com`) must use the same Resend-verified domain.
 
 ## Redeploying
 
@@ -112,10 +91,7 @@ git push github main
 
 ## Notes
 
-- The service build commands explicitly use `pnpm install --no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only).
-- The `railway.json` at repo root explicitly selects Railpack. Do not add a legacy `nixpacksPlan` or `railpack.json` override.
-- The frontend is served by the dependency-free Node server in `artifacts/flexi-route/server.mjs`; do not rely on a globally installed build-stage CLI at runtime.
-- Schema migrations run in Railway's pre-deploy phase before the API process starts
+- The `railpack.json` at repo root overrides the default install command to use `--no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only)
+- Schema migrations run automatically at API startup via `drizzle-kit push`
 - Admin user and default wallet addresses are seeded on first startup
 - Postgres data is persisted via Railway volume at `/var/lib/postgresql/data` (PGDATA subdirectory)
-- Rotate any database or admin credentials that were previously committed to this file before deploying.

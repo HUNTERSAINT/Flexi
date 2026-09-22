@@ -25,6 +25,5 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-EMAIL_FROM = "Flexi Route <Support@flexirouteglobal.com>"
+EMAIL_FROM = "Flexi Support <Support@flexirouteglobal.com>"
 APP_URL = "https://flexirouteglobal.com"
-ADMIN_NOTIFICATION_EMAIL = "Bro070655@gmail.com"

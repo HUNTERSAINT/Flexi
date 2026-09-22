@@ -1,5 +1,5 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
-const FROM = process.env.EMAIL_FROM ?? "Flexi Route <support@flexirouteglobal.com>";
+const FROM = process.env.EMAIL_FROM ?? "Flexi Support <support@flexirouteglobal.com>";
 const REPLY_TO = process.env.EMAIL_REPLY_TO ?? FROM;
 const APP_URL = process.env.APP_URL ?? "https://flexirouteglobal.com";
 
@@ -154,7 +154,7 @@ export async function sendReceiverPaysNotification(opts: {
   serviceType: string;
 }): Promise<void> {
   const { to, recipientName, senderName, trackingNumber, originCity, destinationCity, serviceType } = opts;
-  const payUrl = `${APP_URL}/track?number=${encodeURIComponent(trackingNumber)}`;
+  const payUrl = `${APP_URL}/track?number=${trackingNumber}`;
   const html = wrap(
     `Action Required: Incoming Shipment from ${senderName}`,
     `${senderName} sent you a package. Complete payment to receive it.`,
@@ -188,7 +188,6 @@ const STATUS_LABELS: Record<string, string> = {
   processing: "Processing",
   in_transit: "In Transit",
   out_for_delivery: "Out for Delivery",
-  arrived_at_location: "Arrived at location",
   delivered: "Delivered",
   cancelled: "Cancelled",
 };
@@ -198,7 +197,6 @@ const STATUS_ICONS: Record<string, string> = {
   processing: "🔄",
   in_transit: "🚛",
   out_for_delivery: "🏃",
-  arrived_at_location: "📍",
   delivered: "🎉",
   cancelled: "❌",
 };
@@ -268,35 +266,6 @@ export async function sendDriverAssignedEmail(opts: {
   await send(to, `Driver Assigned — ${trackingNumber}`, html, text);
 }
 
-// ── Driver assignment notification ──────────────────────────────────────
-export async function sendDriverAssignmentEmail(opts: {
-  to: string;
-  name: string;
-  trackingNumber: string;
-  originCity: string;
-  destinationCity: string;
-}): Promise<void> {
-  const { to, name, trackingNumber, originCity, destinationCity } = opts;
-  const trackUrl = `${APP_URL}/track?number=${trackingNumber}`;
-  const html = wrap(
-    `New Delivery Assignment — ${trackingNumber}`,
-    `You have been assigned to shipment ${trackingNumber}.`,
-    `
-    <h2 style="margin:0 0 8px;font-size:24px;color:#0f1f3d;">🚛 New Delivery Assignment</h2>
-    <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
-      Hi ${name}, you have been assigned to a new shipment. Please review the route and delivery details.
-    </p>
-    <table cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background:#f8fafc;border-radius:8px;padding:16px;border:1px solid #e2e8f0;">
-      <tbody>
-        ${infoRow("Tracking Number", trackingNumber)}
-        ${infoRow("Route", `${originCity} → ${destinationCity}`)}
-      </tbody>
-    </table>
-    ${btn("View Shipment", trackUrl)}
-  `);
-  const text = `Hi ${name},\n\nYou have been assigned to shipment ${trackingNumber}.\nRoute: ${originCity} → ${destinationCity}\n\nView shipment: ${trackUrl}\n\n© ${new Date().getFullYear()} Flexi Route`;
-  await send(to, `New Delivery Assignment — ${trackingNumber}`, html, text);
-}
 // ── Receiver payment confirmed ─────────────────────────────────────────────
 export async function sendReceiverPaymentConfirmedEmail(opts: {
   to: string;
