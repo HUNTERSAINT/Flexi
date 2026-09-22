@@ -266,6 +266,9 @@ export async function sendDriverAssignedEmail(opts: {
   await send(to, `Driver Assigned — ${trackingNumber}`, html, text);
 }
 
+// Backward-compatible name used by older shipment route revisions.
+export const sendDriverAssignmentEmail = sendDriverAssignedEmail;
+
 // ── Receiver payment confirmed ─────────────────────────────────────────────
 export async function sendReceiverPaymentConfirmedEmail(opts: {
   to: string;
