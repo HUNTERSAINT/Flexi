@@ -3,6 +3,7 @@ import { Route, Switch, Router as WouterRouter, Redirect, useParams, useLocation
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { SeoManager } from '@/components/seo/seo-manager';
 
 import { PublicLayout } from '@/components/layout/public-layout';
 import Home from '@/pages/public/home';
@@ -100,6 +101,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <AuthProvider>
+          <SeoManager />
           <AppRouter />
           <Toaster position="top-right" richColors />
         </AuthProvider>
