@@ -44,11 +44,33 @@ function sendFile(response, filePath) {
   response.writeHead(200, {
     "Cache-Control": filePath === indexFile ? "no-cache" : "public, max-age=31536000, immutable",
     "Content-Type": contentTypes[extension] ?? "application/octet-stream",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff",
   });
   createReadStream(filePath).pipe(response);
 }
 
 const server = http.createServer(async (request, response) => {
+  const host = String(request.headers.host ?? "").split(":")[0].toLowerCase();
+  const forwardedProto = String(request.headers["x-forwarded-proto"] ?? "")
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+  const canonicalHost = host === "www.flexirouteglobal.com" ? "flexirouteglobal.com" : host;
+
+  if (
+    (forwardedProto && forwardedProto !== "https") ||
+    host === "www.flexirouteglobal.com"
+  ) {
+    response.writeHead(308, {
+      Location: `https://${canonicalHost}${request.url ?? "/"}`,
+      "Cache-Control": "public, max-age=3600",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    });
+    response.end();
+    return;
+  }
+
   if (request.method !== "GET" && request.method !== "HEAD") {
     response.writeHead(405, { Allow: "GET, HEAD" });
     response.end("Method Not Allowed");
@@ -75,13 +97,19 @@ const server = http.createServer(async (request, response) => {
       response.writeHead(200, {
         "Cache-Control": filePath === indexFile ? "no-cache" : "public, max-age=31536000, immutable",
         "Content-Type": contentTypes[path.extname(filePath).toLowerCase()] ?? "application/octet-stream",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "X-Content-Type-Options": "nosniff",
       });
       response.end();
     } else {
       sendFile(response, filePath);
     }
   } catch {
-    response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    response.writeHead(404, {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+      "X-Content-Type-Options": "nosniff",
+    });
     response.end("Not Found");
   }
 });
