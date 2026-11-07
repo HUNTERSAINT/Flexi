@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -119,6 +119,11 @@ for (const page of pages) {
     : path.join(root, page.route.slice(1));
   await mkdir(outputDirectory, { recursive: true });
   await writeFile(path.join(outputDirectory, 'index.html'), renderMetadata(page), 'utf8');
+}
+
+const publicSource = path.resolve(fileURLToPath(new URL('../public/', import.meta.url)));
+for (const asset of ['sitemap.xml', 'robots.txt', 'og-image.svg']) {
+  await copyFile(path.join(publicSource, asset), path.join(root, asset));
 }
 
 console.log(`Generated SEO-ready HTML entry points for ${pages.length} routes.`);
