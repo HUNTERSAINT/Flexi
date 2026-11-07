@@ -1,2 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /driver
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://flexirouteglobal.com/sitemap.xml
