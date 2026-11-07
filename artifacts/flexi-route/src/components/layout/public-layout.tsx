@@ -174,8 +174,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between text-sm text-gray-400">
             <p>&copy; {new Date().getFullYear()} Flexi Route Logistics. All rights reserved.</p>
             <div className="flex gap-6 mt-4 md:mt-0">
-              <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href="/contact" className="hover:text-white transition-colors">Privacy &amp; service enquiries</Link>
             </div>
           </div>
         </div>
