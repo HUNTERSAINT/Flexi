@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Flexi Route</title>
+  <desc id="desc">Shipping, logistics and shipment tracking made easier.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#102b40"/><stop offset="1" stop-color="#176b76"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#35c4b4"/><stop offset="1" stop-color="#8ce4d5"/></linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1020" cy="120" r="240" fill="#ffffff" opacity=".05"/>
+  <circle cx="1090" cy="560" r="300" fill="#ffffff" opacity=".04"/>
+  <rect x="90" y="125" width="94" height="94" rx="24" fill="url(#accent)"/>
+  <path d="M112 170h50M137 145l25 25-25 25" fill="none" stroke="#103347" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="90" y="330" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="88" font-weight="700">Flexi Route</text>
+  <text x="94" y="405" fill="#d9f5f0" font-family="Arial, Helvetica, sans-serif" font-size="36">Shipping. Logistics. Shipment tracking.</text>
+  <rect x="94" y="470" width="270" height="8" rx="4" fill="url(#accent)"/>
+  <text x="94" y="535" fill="#c4e4e1" font-family="Arial, Helvetica, sans-serif" font-size="25">flexirouteglobal.com</text>
+</svg>
