@@ -18,6 +18,7 @@ const contentTypes = {
   ".svg": "image/svg+xml",
   ".txt": "text/plain; charset=utf-8",
   ".webp": "image/webp",
+  ".xml": "application/xml; charset=utf-8",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
 };
@@ -87,6 +88,16 @@ const server = http.createServer(async (request, response) => {
     } catch {
       filePath = null;
     }
+  }
+
+  if (!filePath && /\/(sitemap\.xml|robots\.txt)$/.test(new URL(request.url ?? "/", "http://localhost").pathname)) {
+    response.writeHead(404, {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.end("SEO resource not found");
+    return;
   }
 
   if (!filePath) filePath = indexFile;
