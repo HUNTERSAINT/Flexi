@@ -6,21 +6,21 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { SeoManager } from '@/components/seo/seo-manager';
 
 import { PublicLayout } from '@/components/layout/public-layout';
-import Home from '@/pages/public/home';
-import Login from '@/pages/public/login';
-import Register from '@/pages/public/register';
-import Track from '@/pages/public/track';
-import Pricing from '@/pages/public/pricing';
-import About from '@/pages/public/about';
-import Services from '@/pages/public/services';
-import Contact from '@/pages/public/contact';
-import Faq from '@/pages/public/faq';
-import BookPublic from '@/pages/public/book-public';
-import NotFound from '@/pages/not-found';
+const Home = React.lazy(() => import('@/pages/public/home'));
+const Login = React.lazy(() => import('@/pages/public/login'));
+const Register = React.lazy(() => import('@/pages/public/register'));
+const Track = React.lazy(() => import('@/pages/public/track'));
+const Pricing = React.lazy(() => import('@/pages/public/pricing'));
+const About = React.lazy(() => import('@/pages/public/about'));
+const Services = React.lazy(() => import('@/pages/public/services'));
+const Contact = React.lazy(() => import('@/pages/public/contact'));
+const Faq = React.lazy(() => import('@/pages/public/faq'));
+const BookPublic = React.lazy(() => import('@/pages/public/book-public'));
+const NotFound = React.lazy(() => import('@/pages/not-found'));
 
-import { CustomerRoutes } from '@/pages/customer/routes';
-import { AdminRoutes } from '@/pages/admin/routes';
-import { DriverRoutes } from '@/pages/driver/routes';
+const CustomerRoutes = React.lazy(() => import('@/pages/customer/routes').then((module) => ({ default: module.CustomerRoutes })));
+const AdminRoutes = React.lazy(() => import('@/pages/admin/routes').then((module) => ({ default: module.AdminRoutes })));
+const DriverRoutes = React.lazy(() => import('@/pages/driver/routes').then((module) => ({ default: module.DriverRoutes })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +37,7 @@ function AppRouter() {
   if (isLoading) return null;
 
   return (
+    <React.Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center text-gray-500" role="status">Loading Flexi Route…</div>}>
     <Switch>
       {/* Auth Routes */}
       <Route path="/login">
@@ -93,6 +94,7 @@ function AppRouter() {
         <PublicLayout><NotFound /></PublicLayout>
       </Route>
     </Switch>
+    </React.Suspense>
   );
 }
 
