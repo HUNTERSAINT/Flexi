@@ -56,15 +56,21 @@ export function SeoManager() {
     const isPrivate = /^\/(admin|dashboard|driver)(\/|$)/.test(pathname);
     const isAuth = pathname === '/login' || pathname === '/register';
     const page = pages[pathname];
-    const isIndexable = Boolean(page) && !isShipmentDetail && !isPrivate && !isAuth;
+    const isKnownPrivate = isPrivate || isAuth;
+    const isIndexable = Boolean(page) && !isShipmentDetail && !isKnownPrivate;
     const title = isShipmentDetail
       ? 'Shipment Tracking Details | Flexi Route'
       : page?.title ?? 'Page Not Found | Flexi Route';
     const description = isShipmentDetail
       ? 'View shipment status and delivery updates with Flexi Route.'
       : page?.description ?? 'The requested page could not be found on Flexi Route.';
-    const canonicalPath = isShipmentDetail ? '/track' : page ? pathname : '/';
-    const canonical = `${SITE}${canonicalPath === '/' ? '/' : canonicalPath}`;
+    // Public pages use a self-referencing canonical. Shipment detail URLs
+    // consolidate to /track. Private/auth pages are noindex and self-canonical.
+    // Unknown paths must not canonicalize to the homepage.
+    const canonicalPath = isShipmentDetail ? '/track' : (page || isKnownPrivate) ? pathname : null;
+    const canonical = canonicalPath
+      ? `${SITE}${canonicalPath === '/' ? '/' : canonicalPath}`
+      : null;
 
     document.title = title;
     setMeta('description', description);
@@ -82,12 +88,16 @@ export function SeoManager() {
     setMeta('twitter:image', `${SITE}/og-image.svg`);
 
     let canonicalLink = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    if (!canonicalLink) {
-      canonicalLink = document.createElement('link');
-      canonicalLink.rel = 'canonical';
-      document.head.appendChild(canonicalLink);
+    if (canonical) {
+      if (!canonicalLink) {
+        canonicalLink = document.createElement('link');
+        canonicalLink.rel = 'canonical';
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.href = canonical;
+    } else {
+      canonicalLink?.remove();
     }
-    canonicalLink.href = canonical;
 
     let structuredData = document.head.querySelector<HTMLScriptElement>('#flexi-route-organization-schema');
     if (!structuredData) {
