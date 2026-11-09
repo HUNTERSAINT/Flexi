@@ -100,7 +100,31 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
-  if (!filePath) filePath = indexFile;
+  if (!filePath) {
+    const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+    const isKnownClientRoute =
+      pathname === "/" ||
+      /^\/(about|services|pricing|track|contact|faq|book|login|register)\/?$/.test(pathname) ||
+      /^\/track\/[^/]+\/?$/.test(pathname) ||
+      /^\/(dashboard|admin|driver)(\/.*)?$/.test(pathname);
+
+    if (!isKnownClientRoute) {
+      response.writeHead(404, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "X-Content-Type-Options": "nosniff",
+      });
+      if (request.method === "HEAD") {
+        response.end();
+      } else {
+        createReadStream(indexFile).pipe(response);
+      }
+      return;
+    }
+
+    filePath = indexFile;
+  }
 
   try {
     await stat(filePath);
