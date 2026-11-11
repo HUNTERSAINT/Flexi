@@ -79,7 +79,11 @@ export function SeoManager() {
     setMeta('og:site_name', 'Flexi Route', 'property');
     setMeta('og:title', title, 'property');
     setMeta('og:description', description, 'property');
-    setMeta('og:url', canonical, 'property');
+    if (canonical) {
+      setMeta('og:url', canonical, 'property');
+    } else {
+      document.head.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.remove();
+    }
     setMeta('og:image', `${SITE}/og-image.svg`, 'property');
     setMeta('og:image:alt', 'Flexi Route — shipping and logistics made easier', 'property');
     setMeta('twitter:card', 'summary_large_image');
