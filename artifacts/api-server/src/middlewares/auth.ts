@@ -1,7 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.SESSION_SECRET || "flexi-route-secret";
+// Login tokens are signed with SESSION_SECRET. Production must provide it;
+// the fallback exists only so local development and tests work.
+const JWT_SECRET =
+  process.env.SESSION_SECRET ||
+  (process.env.NODE_ENV === "production" ? "" : "flexi-route-dev-secret");
+
+if (!JWT_SECRET) {
+  throw new Error("SESSION_SECRET must be set in production");
+}
 
 export interface JwtPayload {
   id: number;

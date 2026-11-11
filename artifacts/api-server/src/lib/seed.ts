@@ -3,8 +3,10 @@ import { db, pricingTable, shipmentStatusesTable, usersTable, walletsTable } fro
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 
-const ADMIN_EMAIL = "nkingsley130@gmail.com";
-const ADMIN_PASSWORD = "admin134";
+// Admin login comes from environment variables, never from source code.
+// Set FLEXI_ADMIN_EMAIL and FLEXI_ADMIN_PASSWORD (10+ characters) on the server.
+const ADMIN_EMAIL = process.env["FLEXI_ADMIN_EMAIL"]?.trim();
+const ADMIN_PASSWORD = process.env["FLEXI_ADMIN_PASSWORD"];
 const ADMIN_NAME = "Admin";
 
 export const DEFAULT_SHIPMENT_STATUSES = [
@@ -31,23 +33,32 @@ export async function seedShipmentStatuses(): Promise<void> {
 }
 
 /**
- * Ensures the owner admin account exists and has the correct role + password.
- * Runs on every server startup — safe on both dev and production.
+ * Ensures the owner admin account exists with the credentials configured in
+ * FLEXI_ADMIN_EMAIL / FLEXI_ADMIN_PASSWORD. Runs on every server startup.
+ * - If either variable is missing (or the password is under 10 characters) →
+ *   admin seeding is skipped and nothing is changed.
  * - If the account doesn't exist → creates it as admin.
- * - If the account exists but is not admin → promotes it and resets the password.
- * - If the account exists as admin → no-op.
+ * - If the account exists → makes sure it is an active admin and that its
+ *   password matches FLEXI_ADMIN_PASSWORD (the variable is the source of truth;
+ *   change the password by changing the variable and redeploying).
  */
 export async function seedAdminUser(): Promise<void> {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD || ADMIN_PASSWORD.length < 10) {
+    console.warn(
+      "[seed] Admin seeding skipped: set FLEXI_ADMIN_EMAIL and FLEXI_ADMIN_PASSWORD (10+ characters).",
+    );
+    return;
+  }
+
   try {
     const [existing] = await db
-      .select({ id: usersTable.id, role: usersTable.role })
+      .select({ id: usersTable.id, role: usersTable.role, passwordHash: usersTable.passwordHash, isActive: usersTable.isActive })
       .from(usersTable)
       .where(eq(usersTable.email, ADMIN_EMAIL))
       .limit(1);
 
-    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
-
     if (!existing) {
+      const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
       await db.insert(usersTable).values({
         name: ADMIN_NAME,
         email: ADMIN_EMAIL,
@@ -56,14 +67,18 @@ export async function seedAdminUser(): Promise<void> {
         isActive: true,
       });
       console.log("[seed] Admin account created:", ADMIN_EMAIL);
-    } else if (existing.role !== "admin") {
+      return;
+    }
+
+    const passwordMatches = await bcrypt.compare(ADMIN_PASSWORD, existing.passwordHash);
+    if (existing.role !== "admin" || !existing.isActive || !passwordMatches) {
+      const passwordHash = passwordMatches ? existing.passwordHash : await bcrypt.hash(ADMIN_PASSWORD, 12);
       await db
         .update(usersTable)
         .set({ role: "admin", passwordHash, isActive: true })
         .where(eq(usersTable.id, existing.id));
-      console.log("[seed] Account promoted to admin:", ADMIN_EMAIL);
+      console.log("[seed] Admin account synchronized from environment:", ADMIN_EMAIL);
     }
-    // else: already admin — nothing to do
   } catch (err) {
     console.error("[seed] Could not seed admin user:", err);
   }

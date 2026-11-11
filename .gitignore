@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Agent/conversation exports contain copies of the project and must not be committed
+.conversation/

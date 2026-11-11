@@ -34,7 +34,9 @@ dashboard (Variables tab → Raw Editor).
 | Variable | Notes |
 |----------|-------|
 | `DATABASE_URL` | Supabase **Session pooler** connection string |
-| `SESSION_SECRET` | Long random string |
+| `SESSION_SECRET` | Long random string. **Required in production** (the server refuses to start without it) |
+| `FLEXI_ADMIN_EMAIL` | Email of the admin account |
+| `FLEXI_ADMIN_PASSWORD` | Admin password, 10+ characters. It is the source of truth: on every start the admin account is created or synchronized to it. To change the admin password, change this variable and redeploy. If either admin variable is missing, admin seeding is skipped. |
 | `NODE_ENV` | `production` |
 | `APP_URL` / `PUBLIC_APP_URL` | `https://flexirouteglobal.com` |
 | `EMAIL_FROM`, `EMAIL_REPLY_TO`, `ADMIN_NOTIFICATION_EMAIL` | Email addresses |

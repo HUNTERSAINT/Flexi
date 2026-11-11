@@ -27,11 +27,6 @@ export default function Login() {
     defaultValues: { email: '', password: '' },
   });
 
-  const fillAdmin = () => {
-    form.setValue('email', 'nkingsley130@gmail.com');
-    form.setValue('password', 'admin134');
-  };
-
   const loginMutation = useLogin();
 
   const onSubmit = async (data: LoginFormValues) => {
