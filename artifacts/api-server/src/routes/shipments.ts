@@ -601,6 +601,7 @@ router.post("/shipments/:id/assign", requireRole("admin"), async (req, res) => {
         to: driver.email,
         name: driver.name,
         trackingNumber: updated.trackingNumber,
+        driverName: driver.name,
         originCity: updated.originCity ?? "",
         destinationCity: updated.destinationCity ?? "",
       }).catch(() => {});
