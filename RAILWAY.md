@@ -1,97 +1,75 @@
 # Flexi Route — Railway Deployment Guide
 
+Flexi Route runs as **one Railway service** (`API Server`). The same Node process
+serves the API under `/api` and the built React website for every other path, so
+the site and the API share one origin and no cross-origin setup is needed.
+
 ## Live URLs
 
-| Service  | URL |
+| What     | URL |
 |----------|-----|
-| Frontend | https://flexirouteglobal.com (also www.) |
-| API      | https://api.flexirouteglobal.com |
-| Frontend (Railway) | https://frontend-production-2fa3.up.railway.app |
-| API (Railway)      | https://api-server-production-2c9f.up.railway.app |
+| Website  | https://flexirouteglobal.com (www redirects to the apex) |
+| API      | https://flexirouteglobal.com/api (also https://api.flexirouteglobal.com) |
+| Railway  | https://api-server-production-2c9f.up.railway.app |
 
 ## Railway Project
 
 - **Project ID**: `3d50eed0-e0ed-4e8c-bc89-4b352bce0fcb`
 - **Environment ID**: `5295ca21-8245-4517-add7-d5f48de8617c`
-- **Project**: https://railway.app/project/3d50eed0-e0ed-4e8c-bc89-4b352bce0fcb
 
 ## Services
 
-| Service   | Service ID |
-|-----------|-----------|
-| Postgres  | `5a149a94-c153-4f7c-aba0-100f719eccf1` |
-| API Server | `f3aa4bc7-2ddc-488c-a1c2-0ff1ceefc153` |
-| Frontend  | `c9b4c104-5ae9-4dae-b332-97e1c9615f86` |
+| Service    | Service ID |
+|------------|-----------|
+| API Server (website + API) | `f3aa4bc7-2ddc-488c-a1c2-0ff1ceefc153` |
+| Postgres (legacy backup, no longer used by the app) | `5a149a94-c153-4f7c-aba0-100f719eccf1` |
 
-## Admin Login
+The database is **Supabase**. Railway Postgres is kept only as a backup until it is deleted.
 
-- **Email**: nkingsley130@gmail.com
-- **Password**: admin134
+## Environment Variables (API Server service)
 
-## Environment Variables
+Never put real values in this file or anywhere in Git. Set them in the Railway
+dashboard (Variables tab → Raw Editor).
 
-### API Server
-| Variable | Value |
+| Variable | Notes |
 |----------|-------|
-| `DATABASE_URL` | `postgresql://postgres:FlexiRoute2024Secure!@postgres.railway.internal:5432/railway?sslmode=disable` |
-| `SESSION_SECRET` | (set in Railway dashboard) |
+| `DATABASE_URL` | Supabase **Session pooler** connection string |
+| `SESSION_SECRET` | Long random string |
 | `NODE_ENV` | `production` |
-| `APP_URL` | `https://flexirouteglobal.com` |
-| `EMAIL_FROM` | `Flexi Support <support@flexirouteglobal.com>` |
-| `RESEND_API_KEY` | (set in Railway dashboard) |
+| `APP_URL` / `PUBLIC_APP_URL` | `https://flexirouteglobal.com` |
+| `EMAIL_FROM`, `EMAIL_REPLY_TO`, `ADMIN_NOTIFICATION_EMAIL` | Email addresses |
+| `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `RESEND_WEBHOOK_SECRET` | Resend email |
+| `CLOUDAPI_KEY` | As configured |
 | `PNPM_VERSION` | `10.26.1` |
+| `VITE_API_URL` | **Leave unset.** The website calls `/api` on its own origin. |
+| `FRONTEND_DIST` | Optional. Overrides the folder of the built website. |
 
-### Frontend
-| Variable | Value |
-|----------|-------|
-| `VITE_API_URL` | `https://api.flexirouteglobal.com` |
-| `NODE_ENV` | `production` |
-| `PNPM_VERSION` | `10.26.1` |
+## Build / Start / Health
 
-### Postgres
-| Variable | Value |
-|----------|-------|
-| `POSTGRES_DB` | `railway` |
-| `POSTGRES_USER` | `postgres` |
-| `POSTGRES_PASSWORD` | `FlexiRoute2024Secure!` |
-| `PGDATA` | `/var/lib/postgresql/data/pgdata` |
-
-## Build Commands
-
-### API Server
-- **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/api-server run build`
-- **Start**: `cd /app/lib/db && (npx drizzle-kit push --config ./drizzle.config.ts || true) && node --enable-source-maps /app/artifacts/api-server/dist/index.mjs`
+- **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/flexi-route run build && pnpm --filter @workspace/api-server run build`
+- **Pre-deploy**: `pnpm --filter @workspace/db exec drizzle-kit push --config ./drizzle.config.ts`
+- **Start**: `node --enable-source-maps /app/artifacts/api-server/dist/index.mjs`
 - **Healthcheck**: `/api/healthz`
 
-### Frontend
-- **Build**: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/flexi-route run build && npm install -g serve`
-- **Start**: `serve -s /app/artifacts/flexi-route/dist/public -l $PORT`
+The API server serves `artifacts/flexi-route/dist/public` when it exists. If it
+is missing (local API-only development), only the API is served.
 
-## DNS (Cloudflare — Zone: flexirouteglobal.com)
+## DNS (Cloudflare — zone: flexirouteglobal.com)
 
 | Type  | Name                        | Target |
 |-------|-----------------------------|--------|
-| CNAME | flexirouteglobal.com        | frontend-production-2fa3.up.railway.app |
-| CNAME | www.flexirouteglobal.com    | frontend-production-2fa3.up.railway.app |
+| CNAME | flexirouteglobal.com        | api-server-production-2c9f.up.railway.app |
+| CNAME | www.flexirouteglobal.com    | api-server-production-2c9f.up.railway.app |
 | CNAME | api.flexirouteglobal.com    | api-server-production-2c9f.up.railway.app |
 
-All records are **proxied through Cloudflare** (orange cloud). SSL mode: **Full**.
+Proxied through Cloudflare (orange cloud), SSL mode **Full**. All three
+hostnames must also be added as custom domains on the API Server service.
 
 ## Redeploying
 
-To redeploy after a code push to GitHub:
-
-```bash
-# Push code
-git push github main
-
-# Trigger redeployments via Railway API (use RAILWAY secret)
-# The Railway dashboard auto-deploys on git push if connected via GitHub trigger
-```
+Pushing to the connected GitHub branch deploys automatically.
 
 ## Notes
 
-- The `railpack.json` at repo root overrides the default install command to use `--no-frozen-lockfile` (needed because pnpm overrides in pnpm-workspace.yaml are pnpm v10-only)
-- Schema migrations run automatically at API startup via `drizzle-kit push`
-- Admin user and default wallet addresses are seeded on first startup
-- Postgres data is persisted via Railway volume at `/var/lib/postgresql/data` (PGDATA subdirectory)
+- `railpack.json` at the repo root keeps `pnpm install --no-frozen-lockfile` (needed because the pnpm overrides in `pnpm-workspace.yaml` are pnpm v10-only).
+- The admin user, default wallets, pricing and shipment statuses are seeded on first startup.
